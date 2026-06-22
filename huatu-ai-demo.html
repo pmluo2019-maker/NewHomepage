@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>华图 AI 备考老师</title>
+<style>
+  :root{
+    --bg:#F2F2F7;
+    --surface:#FFFFFF;
+    --surface-2:#F7F7FA;
+    --text:#1C1C1E;
+    --text-2:#8E8E93;
+    --text-3:#AEAEB2;
+    --blue:#007AFF;
+    --blue-soft:#E9F1FF;
+    --line:rgba(60,60,67,0.10);
+    --line-strong:rgba(60,60,67,0.18);
+    --grad:linear-gradient(135deg,#0A84FF 0%,#5E5CE6 100%);
+    --good:#34C759;
+    --warn:#FF9F0A;
+    --bad:#FF3B30;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+    --shadow:0 1px 3px rgba(0,0,0,.06), 0 10px 30px rgba(0,0,0,.05);
+    --r:18px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",system-ui,sans-serif;
+    background:#E5E5EA;
+    color:var(--text);
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    letter-spacing:-0.01em;
+  }
+  /* ---------- Phone shell ---------- */
+  .phone{
+    position:relative;
+    width:390px;height:844px;max-height:100vh;
+    background:var(--bg);
+    overflow:hidden;
+    border-radius:46px;
+    box-shadow:0 0 0 11px #1c1c1e, 0 0 0 13px #2c2c2e, 0 40px 80px rgba(0,0,0,.35);
+  }
+  @media (max-width:430px){
+    body{background:var(--bg);}
+    .phone{width:100vw;height:100vh;max-height:none;border-radius:0;box-shadow:none;}
+  }
+  .statusbar{
+    position:absolute;top:0;left:0;right:0;height:50px;z-index:60;
+    display:flex;align-items:flex-end;justify-content:space-between;
+    padding:0 26px 6px;font-size:14px;font-weight:600;pointer-events:none;
+  }
+  .statusbar .dots{display:flex;gap:5px;align-items:center;}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:30px;background:#1c1c1e;border-radius:18px;z-index:61;}
+  @media (max-width:430px){.notch{display:none;}}
+
+  /* ---------- View system ---------- */
+  .stage{position:absolute;inset:0;overflow:hidden;}
+  .view{
+    position:absolute;inset:0;
+    background:var(--bg);
+    transform:translateX(100%);
+    transition:transform .36s cubic-bezier(.32,.72,0,1);
+    overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    will-change:transform;
+  }
+  .view.active{transform:translateX(0);}
+  .view.behind{transform:translateX(-24%);}
+  .view::-webkit-scrollbar{display:none;}
+
+  /* ---------- Nav bar ---------- */
+  .nav{
+    position:sticky;top:0;z-index:30;height:94px;
+    padding-top:44px;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(242,242,247,.82);
+    backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:.5px solid var(--line);
+  }
+  .nav .title{font-size:17px;font-weight:600;}
+  .nav .back{
+    position:absolute;left:8px;top:44px;height:50px;display:flex;align-items:center;
+    color:var(--blue);font-size:17px;font-weight:400;padding:0 8px;cursor:pointer;gap:2px;
+  }
+  .nav .back svg{width:12px;height:21px;}
+  .nav .sub{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:12px;color:var(--text-2);}
+
+  /* ---------- avatar (shared in chat / feature pages) ---------- */
+  .avatar{
+    width:56px;height:56px;border-radius:50%;flex:0 0 auto;
+    background:var(--grad);position:relative;
+    box-shadow:0 8px 20px rgba(94,92,230,.32);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .avatar.sm{width:30px;height:30px;box-shadow:0 4px 10px rgba(94,92,230,.3);}
+  .avatar svg{width:60%;height:60%;}
+
+  /* ---------- HOME (hero-centric) ---------- */
+  #view-home{display:flex;flex-direction:column;}
+  .home-head{flex:0 0 auto;padding:52px 18px 2px;}
+  .hh-top{display:flex;align-items:center;justify-content:space-between;}
+  .brand{font-size:15px;font-weight:700;letter-spacing:-.01em;}
+  .vip-btn{
+    display:flex;align-items:center;gap:5px;
+    background:linear-gradient(135deg,#FFE7B3,#F6C667);
+    color:#6B4B12;font-size:12.5px;font-weight:700;
+    padding:7px 13px;border-radius:999px;cursor:pointer;
+    box-shadow:0 4px 12px rgba(214,170,80,.35);
+    border:.5px solid rgba(255,255,255,.6);
+  }
+  .vip-btn.on{background:linear-gradient(135deg,#34C759,#2AA84A);color:#fff;box-shadow:0 4px 12px rgba(52,199,89,.4);}
+
+  /* hero: AI teacher as the core */
+  .hero{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 24px;min-height:0;}
+  .ai-stage{position:relative;width:212px;height:204px;display:flex;align-items:center;justify-content:center;}
+  .aura{position:absolute;border-radius:50%;pointer-events:none;}
+  .aura.a1{width:162px;height:162px;background:radial-gradient(circle,rgba(94,92,230,.30),transparent 68%);animation:pulse 3.4s ease-in-out infinite;}
+  .aura.a2{width:212px;height:212px;background:radial-gradient(circle,rgba(10,132,255,.20),transparent 64%);animation:pulse 3.4s ease-in-out infinite .7s;}
+  .ring{position:absolute;border-radius:50%;border:1.5px solid rgba(10,132,255,.22);animation:ringExpand 3.6s ease-out infinite;}
+  .ring.r2{animation-delay:1.8s;}
+  @keyframes ringExpand{0%{width:130px;height:130px;opacity:.55;}100%{width:210px;height:210px;opacity:0;}}
+  @keyframes pulse{0%,100%{transform:scale(.94);opacity:.6;}50%{transform:scale(1.06);opacity:1;}}
+  .ai-orb{position:relative;z-index:2;animation:floaty 5.5s ease-in-out infinite;filter:drop-shadow(0 16px 28px rgba(94,92,230,.42));}
+  @keyframes floaty{0%,100%{transform:translateY(0);}50%{transform:translateY(-11px);}}
+  .spark{position:absolute;z-index:3;animation:twinkle 2.6s ease-in-out infinite;}
+  .spark.s1{top:22px;right:30px;color:#FFD66B;font-size:15px;}
+  .spark.s2{bottom:38px;left:26px;color:#9CCBFF;font-size:12px;animation-delay:.9s;}
+  .spark.s3{top:56px;left:20px;color:#C9B8FF;font-size:11px;animation-delay:1.6s;}
+  @keyframes twinkle{0%,100%{opacity:.25;transform:scale(.8);}50%{opacity:1;transform:scale(1.2);}}
+  .hero-greet{text-align:center;margin-top:12px;}
+  .hero-greet h1{font-size:25px;font-weight:800;letter-spacing:-.02em;}
+  .hero-greet p{font-size:14px;color:var(--text-2);margin-top:8px;line-height:1.55;}
+  .online{display:inline-flex;align-items:center;gap:7px;margin-top:14px;background:var(--surface);border:.5px solid var(--line);padding:7px 14px;border-radius:999px;font-size:12.5px;color:var(--text-2);box-shadow:var(--shadow-sm);}
+  .online .dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 0 3px rgba(52,199,89,.18);animation:breathe 2s ease-in-out infinite;}
+  @keyframes breathe{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+  /* compact service shortcuts near bottom */
+  .svc-wrap{flex:0 0 auto;padding:6px 0 calc(88px + var(--safe-bottom));}
+  .svc-label{font-size:12.5px;color:var(--text-2);font-weight:600;padding:0 20px 10px;}
+  .svc-strip{display:flex;gap:8px;overflow-x:auto;padding:0 16px;scrollbar-width:none;}
+  .svc-strip::-webkit-scrollbar{display:none;}
+  .svc-item{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:7px;width:60px;cursor:pointer;transition:transform .12s;}
+  .svc-item:active{transform:scale(.9);}
+  .svc-item .si-ico{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);border:.5px solid var(--line);}
+  .svc-item .si-ico svg{width:25px;height:25px;}
+  .svc-item .si-l{font-size:11px;color:var(--text-2);font-weight:500;text-align:center;line-height:1.2;}
+
+  @media (prefers-reduced-motion: reduce){
+    .aura,.ring,.ai-orb,.spark,.online .dot{animation:none!important;}
+  }
+
+  /* input dock */
+  .dock{
+    position:absolute;left:0;right:0;bottom:0;z-index:40;
+    padding:10px 14px calc(14px + var(--safe-bottom));
+    background:rgba(242,242,247,.86);
+    backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-top:.5px solid var(--line);
+    display:flex;align-items:center;gap:10px;
+  }
+  .icon-btn{
+    width:42px;height:42px;flex:0 0 auto;border-radius:50%;
+    background:var(--surface);border:.5px solid var(--line);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:var(--shadow-sm);transition:transform .12s;
+  }
+  .icon-btn:active{transform:scale(.9);}
+  .icon-btn svg{width:21px;height:21px;color:var(--blue);}
+  .input-wrap{flex:1;display:flex;align-items:center;background:var(--surface);border:.5px solid var(--line);border-radius:999px;padding:0 6px 0 16px;height:42px;box-shadow:var(--shadow-sm);}
+  .input-wrap input{flex:1;border:none;outline:none;background:transparent;font-size:15px;font-family:inherit;color:var(--text);}
+  .input-wrap input::placeholder{color:var(--text-3);transition:opacity .26s ease;}
+  .input-wrap input.ph-fade::placeholder{opacity:0;}
+  .send-btn{width:30px;height:30px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s,opacity .12s;opacity:.4;pointer-events:none;}
+  .send-btn.on{opacity:1;pointer-events:auto;}
+  .send-btn:active{transform:scale(.85);}
+  .send-btn svg{width:17px;height:17px;color:#fff;}
+
+  /* ---------- CHAT ---------- */
+  #view-chat{display:flex;flex-direction:column;overflow:hidden;}
+  #view-chat .nav{flex:0 0 auto;}
+  #view-chat .dock{position:static;flex:0 0 auto;}
+  .chat-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 18px;display:flex;flex-direction:column;gap:14px;}
+  .chat-scroll::-webkit-scrollbar{display:none;}
+  .row{display:flex;gap:9px;align-items:flex-end;max-width:100%;}
+  .row.me{justify-content:flex-end;}
+  .bubble{
+    max-width:75%;font-size:15px;line-height:1.5;padding:11px 15px;border-radius:21px;
+    word-break:break-word;animation:pop .28s cubic-bezier(.18,.89,.32,1.28);
+  }
+  .row.me .bubble{background:var(--blue);color:#fff;border-bottom-right-radius:7px;}
+  .row.ai .bubble{background:var(--surface);color:var(--text);border-bottom-left-radius:7px;box-shadow:var(--shadow-sm);border:.5px solid var(--line);}
+  .row.me .bubble.img{padding:6px;background:var(--blue);}
+  .bubble.img img,.bubble.img .mockpaper{border-radius:14px;display:block;}
+  @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.96);}to{opacity:1;transform:none;}}
+  .typing{display:flex;gap:5px;padding:14px 16px;}
+  .typing span{width:8px;height:8px;border-radius:50%;background:var(--text-3);animation:blink 1.2s infinite;}
+  .typing span:nth-child(2){animation-delay:.2s;}
+  .typing span:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,60%,100%{opacity:.25;transform:translateY(0);}30%{opacity:1;transform:translateY(-3px);}}
+
+  /* function card — standalone message row */
+  .fcard{
+    background:var(--surface);border-radius:16px;overflow:hidden;
+    border:.5px solid var(--line);box-shadow:var(--shadow);cursor:pointer;
+    animation:pop .3s cubic-bezier(.18,.89,.32,1.28);transition:transform .14s;
+  }
+  .card-row{align-items:flex-start;padding-left:39px;}
+  .card-row .fcard{width:100%;max-width:300px;}
+  .fcard:active{transform:scale(.975);}
+  .fcard .fc-head{display:flex;align-items:center;gap:9px;padding:13px 14px 10px;}
+  .fc-tag{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .fc-tag svg{width:17px;height:17px;}
+  .fc-head .ft{font-size:14.5px;font-weight:700;}
+  .fc-head .fs{font-size:11.5px;color:var(--text-3);}
+  .fc-body{padding:0 14px 12px;}
+  .fc-foot{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:.5px solid var(--line);background:var(--surface-2);font-size:13px;color:var(--blue);font-weight:600;}
+  .fc-foot svg{width:13px;height:13px;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;}
+  .chip{background:var(--surface);border:1px solid var(--blue);color:var(--blue);font-size:13.5px;font-weight:600;padding:8px 14px;border-radius:999px;cursor:pointer;transition:transform .12s,background .12s;box-shadow:var(--shadow-sm);}
+  .chip:active{transform:scale(.94);background:var(--blue-soft);}
+
+  /* mock data bits */
+  .mini-bars{display:flex;flex-direction:column;gap:7px;}
+  .mb-row{display:flex;align-items:center;gap:8px;font-size:12px;}
+  .mb-row .mb-l{width:52px;color:var(--text-2);flex:0 0 auto;}
+  .mb-track{flex:1;height:7px;background:var(--surface-2);border-radius:999px;overflow:hidden;}
+  .mb-fill{height:100%;border-radius:999px;}
+  .mb-v{width:26px;text-align:right;font-weight:700;font-size:11.5px;color:var(--text);}
+  .progress-line{height:8px;background:var(--surface-2);border-radius:999px;overflow:hidden;margin-top:8px;}
+  .progress-line>div{height:100%;background:var(--grad);border-radius:999px;}
+
+  /* ---------- FEATURE PAGE ---------- */
+  .fp{padding:18px 18px 40px;}
+  .fp h2{font-size:24px;font-weight:700;letter-spacing:-0.02em;}
+  .fp .lead{font-size:13.5px;color:var(--text-2);margin-top:5px;line-height:1.5;}
+  .panel{background:var(--surface);border-radius:18px;padding:18px;margin-top:16px;box-shadow:var(--shadow-sm);border:.5px solid var(--line);}
+  .panel-h{font-size:13px;color:var(--text-2);font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:16px;}
+  .stat{background:var(--surface);border-radius:16px;padding:14px 12px;text-align:center;box-shadow:var(--shadow-sm);border:.5px solid var(--line);}
+  .stat .n{font-size:23px;font-weight:800;letter-spacing:-0.02em;}
+  .stat .l{font-size:11px;color:var(--text-2);margin-top:3px;}
+  .mod-list{display:flex;flex-direction:column;}
+  .mod{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:.5px solid var(--line);}
+  .mod:last-child{border-bottom:none;}
+  .mod .mn{flex:1;font-size:15px;font-weight:600;}
+  .mod .mtrack{width:110px;height:8px;background:var(--surface-2);border-radius:999px;overflow:hidden;}
+  .mod .mtrack>div{height:100%;border-radius:999px;}
+  .mod .mscore{width:30px;text-align:right;font-weight:800;font-size:15px;}
+  .badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;}
+  .badge.weak{background:#FFEBE9;color:var(--bad);}
+  .badge.strong{background:#E6F8EC;color:var(--good);}
+  .tip{background:var(--blue-soft);border-radius:14px;padding:13px 15px;font-size:13.5px;line-height:1.55;color:#0a4da3;margin-top:16px;display:flex;gap:9px;}
+  .tip svg{width:18px;height:18px;flex:0 0 auto;margin-top:1px;}
+  .task{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:.5px solid var(--line);cursor:pointer;}
+  .task:last-child{border-bottom:none;}
+  .check{width:24px;height:24px;border-radius:50%;border:2px solid var(--line-strong);flex:0 0 auto;display:flex;align-items:center;justify-content:center;transition:.18s;}
+  .check svg{width:14px;height:14px;color:#fff;opacity:0;}
+  .task.done .check{background:var(--good);border-color:var(--good);}
+  .task.done .check svg{opacity:1;}
+  .task .tx{flex:1;}
+  .task .tt{font-size:15px;font-weight:600;transition:.18s;}
+  .task.done .tt{color:var(--text-3);text-decoration:line-through;}
+  .task .ttag{font-size:11px;color:var(--text-2);margin-top:2px;}
+  .subtag{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:7px;background:var(--surface-2);color:var(--text-2);}
+  .ring-wrap{display:flex;align-items:center;gap:18px;}
+  .score-ring{position:relative;width:96px;height:96px;flex:0 0 auto;}
+  .score-ring .rn{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .score-ring .rn b{font-size:26px;font-weight:800;}
+  .score-ring .rn span{font-size:11px;color:var(--text-2);}
+  .pill-btn{display:block;width:100%;text-align:center;background:var(--blue);color:#fff;font-size:16px;font-weight:600;padding:15px;border-radius:15px;margin-top:18px;cursor:pointer;border:none;font-family:inherit;transition:transform .12s;}
+  .pill-btn:active{transform:scale(.98);}
+  .pill-btn.ghost{background:var(--surface);color:var(--blue);border:1px solid var(--blue);box-shadow:var(--shadow-sm);}
+  .qa{margin-top:14px;}
+  .qa .q{font-size:16px;font-weight:600;line-height:1.5;}
+  .opt{display:flex;align-items:center;gap:11px;padding:14px;border:1.5px solid var(--line);border-radius:14px;margin-top:10px;cursor:pointer;font-size:15px;transition:.15s;}
+  .opt .ol{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line-strong);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-2);flex:0 0 auto;}
+  .opt.sel{border-color:var(--blue);background:var(--blue-soft);}
+  .opt.sel .ol{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .feat-list{display:flex;flex-direction:column;gap:11px;}
+  .feat-item{display:flex;align-items:center;gap:13px;background:var(--surface);border-radius:16px;padding:15px;box-shadow:var(--shadow-sm);border:.5px solid var(--line);}
+  .feat-item .fi-ico{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .feat-item .fi-ico svg{width:22px;height:22px;}
+  .feat-item .fi-t{font-size:15.5px;font-weight:600;}
+  .feat-item .fi-d{font-size:12px;color:var(--text-2);margin-top:2px;}
+
+  /* ---------- CAMERA ---------- */
+  #view-camera{background:#0b0b0c;}
+  .cam-top{position:absolute;top:0;left:0;right:0;padding-top:50px;height:96px;z-index:5;display:flex;align-items:center;justify-content:space-between;padding-left:18px;padding-right:18px;}
+  .cam-top .cclose{color:#fff;font-size:30px;font-weight:300;cursor:pointer;line-height:1;}
+  .cam-top .ctitle{color:#fff;font-size:16px;font-weight:600;}
+  .cam-view{position:absolute;inset:96px 0 200px;display:flex;align-items:center;justify-content:center;padding:0 20px;}
+  .frame{position:relative;width:100%;max-width:300px;}
+  .corner{position:absolute;width:28px;height:28px;border:3px solid #fff;}
+  .corner.tl{top:-6px;left:-6px;border-right:none;border-bottom:none;border-radius:8px 0 0 0;}
+  .corner.tr{top:-6px;right:-6px;border-left:none;border-bottom:none;border-radius:0 8px 0 0;}
+  .corner.bl{bottom:-6px;left:-6px;border-right:none;border-top:none;border-radius:0 0 0 8px;}
+  .corner.br{bottom:-6px;right:-6px;border-left:none;border-top:none;border-radius:0 0 8px 0;}
+  .mockpaper{width:100%;background:#fff;border-radius:6px;padding:22px 20px;font-size:13px;color:#1c1c1e;line-height:1.7;box-shadow:0 10px 40px rgba(0,0,0,.4);}
+  .mockpaper .mp-h{font-weight:700;font-size:14px;margin-bottom:10px;}
+  .mockpaper .mp-q{margin-bottom:6px;}
+  .mockpaper .mp-ans{display:inline-block;border:1.5px solid #007AFF;color:#007AFF;border-radius:4px;padding:0 6px;font-weight:700;}
+  .scanline{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#0A84FF,transparent);box-shadow:0 0 12px #0A84FF;animation:scan 2.4s ease-in-out infinite;border-radius:2px;}
+  @keyframes scan{0%,100%{top:4%;}50%{top:94%;}}
+  .cam-tip{position:absolute;bottom:172px;left:0;right:0;text-align:center;color:rgba(255,255,255,.7);font-size:12.5px;}
+  .cam-bar{position:absolute;left:0;right:0;bottom:0;height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding-bottom:calc(20px + var(--safe-bottom));}
+  .shutter{width:74px;height:74px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.35);cursor:pointer;transition:transform .12s;background-clip:padding-box;}
+  .shutter:active{transform:scale(.92);}
+  .cam-send{display:none;background:var(--blue);color:#fff;font-size:16px;font-weight:600;padding:14px 40px;border-radius:14px;cursor:pointer;border:none;font-family:inherit;animation:pop .3s;}
+  .cam-send.show{display:block;}
+  .cam-label{color:#fff;font-size:13px;}
+
+  /* ---------- MEMBERSHIP SHEET ---------- */
+  .mask{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:80;opacity:0;pointer-events:none;transition:opacity .3s;}
+  .mask.show{opacity:1;pointer-events:auto;}
+  .sheet{
+    position:absolute;left:0;right:0;bottom:0;z-index:81;
+    background:var(--surface);border-radius:26px 26px 0 0;
+    padding:10px 22px calc(26px + var(--safe-bottom));
+    transform:translateY(110%);transition:transform .42s cubic-bezier(.32,.72,0,1);
+    max-height:88%;overflow-y:auto;
+  }
+  .sheet.show{transform:translateY(0);}
+  .grip{width:38px;height:5px;background:var(--line-strong);border-radius:999px;margin:8px auto 16px;}
+  .vip-hero{background:linear-gradient(135deg,#1c1c2e,#2d2d4a);border-radius:20px;padding:22px;color:#fff;position:relative;overflow:hidden;}
+  .vip-hero .crown{position:absolute;right:-10px;top:-10px;font-size:90px;opacity:.12;}
+  .vip-hero .vt{font-size:13px;color:#FFD66B;font-weight:700;letter-spacing:.05em;}
+  .vip-hero .vp{font-size:21px;font-weight:800;margin-top:4px;}
+  .vip-hero .vd{font-size:12.5px;opacity:.7;margin-top:6px;line-height:1.5;}
+  .vip-price{display:flex;align-items:baseline;gap:8px;margin-top:14px;}
+  .vip-price .now{font-size:30px;font-weight:800;color:#FFD66B;}
+  .vip-price .was{font-size:14px;color:rgba(255,255,255,.45);text-decoration:line-through;}
+  .vip-price .per{font-size:13px;opacity:.7;}
+  .perk{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:.5px solid var(--line);font-size:14.5px;}
+  .perk:last-of-type{border-bottom:none;}
+  .perk .pk{width:26px;height:26px;border-radius:8px;background:var(--blue-soft);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .perk .pk svg{width:15px;height:15px;color:var(--blue);}
+
+  /* toast */
+  .toast{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.9);z-index:200;background:rgba(30,30,30,.92);color:#fff;padding:22px 26px;border-radius:18px;font-size:15px;font-weight:600;text-align:center;opacity:0;pointer-events:none;transition:.25s;backdrop-filter:blur(10px);max-width:78%;}
+  .toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+  .toast .tcheck{width:48px;height:48px;border-radius:50%;background:var(--good);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;}
+  .toast .tcheck svg{width:26px;height:26px;color:#fff;}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar">
+    <span>9:41</span>
+    <span class="dots">
+      <svg width="18" height="11" viewBox="0 0 18 11" fill="none"><rect x="0" y="6" width="3" height="5" rx="1" fill="#1c1c1e"/><rect x="5" y="3.5" width="3" height="7.5" rx="1" fill="#1c1c1e"/><rect x="10" y="1.5" width="3" height="9.5" rx="1" fill="#1c1c1e"/><rect x="15" y="0" width="3" height="11" rx="1" fill="#1c1c1e" opacity=".3"/></svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><path d="M8 2.5C10 2.5 11.8 3.3 13 4.5L14.2 3.2C12.6 1.6 10.4 0.7 8 0.7S3.4 1.6 1.8 3.2L3 4.5C4.2 3.3 6 2.5 8 2.5Z" fill="#1c1c1e"/><path d="M8 5.5C9 5.5 10 5.9 10.7 6.6L8 9.3 5.3 6.6C6 5.9 7 5.5 8 5.5Z" fill="#1c1c1e"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="1" y="1" width="20" height="10" rx="3" fill="none" stroke="#1c1c1e" stroke-opacity=".4"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="#1c1c1e"/><rect x="22.5" y="4" width="1.5" height="4" rx=".75" fill="#1c1c1e" fill-opacity=".4"/></svg>
+    </span>
+  </div>
+
+  <div class="stage" id="stage">
+
+    <!-- ============ HOME ============ -->
+    <div class="view active" id="view-home" data-level="0">
+      <div class="home-head">
+        <div class="hh-top">
+          <span class="brand">华图 · AI 智学会员</span>
+          <div class="vip-btn" id="vipBtn" onclick="openSheet()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 4L12 4l3.5 5L21 5l-2 11H5zm0 2h14v2H5v-2z"/></svg>
+            <span id="vipText">¥499 开通会员</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="ai-stage">
+          <div class="aura a1"></div>
+          <div class="aura a2"></div>
+          <div class="ring"></div>
+          <div class="ring r2"></div>
+          <span class="spark s1">✦</span>
+          <span class="spark s2">✦</span>
+          <span class="spark s3">✦</span>
+          <div class="ai-orb">
+            <svg width="148" height="158" viewBox="0 0 160 170" fill="none">
+              <defs>
+                <radialGradient id="orbG" cx="36%" cy="30%" r="80%">
+                  <stop offset="0" stop-color="#7DB2FF"/>
+                  <stop offset="52%" stop-color="#0A84FF"/>
+                  <stop offset="100%" stop-color="#5E5CE6"/>
+                </radialGradient>
+                <linearGradient id="capG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#3A3A57"/>
+                  <stop offset="1" stop-color="#222238"/>
+                </linearGradient>
+              </defs>
+              <circle cx="80" cy="98" r="56" fill="url(#orbG)"/>
+              <ellipse cx="60" cy="74" rx="26" ry="17" fill="#fff" opacity=".16"/>
+              <ellipse cx="64" cy="97" rx="6.2" ry="7.8" fill="#fff"/>
+              <ellipse cx="96" cy="97" rx="6.2" ry="7.8" fill="#fff"/>
+              <circle cx="66" cy="99" r="3.4" fill="#23264C"/>
+              <circle cx="98" cy="99" r="3.4" fill="#23264C"/>
+              <circle cx="67.2" cy="97.4" r="1.1" fill="#fff"/>
+              <circle cx="99.2" cy="97.4" r="1.1" fill="#fff"/>
+              <path d="M69 114 Q80 123 91 114" stroke="#fff" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+              <circle cx="54" cy="110" r="5" fill="#fff" opacity=".18"/>
+              <circle cx="106" cy="110" r="5" fill="#fff" opacity=".18"/>
+              <polygon points="80,26 126,42 80,58 34,42" fill="url(#capG)"/>
+              <polygon points="80,32 112,44 80,55 48,44" fill="#1b1b2c" opacity=".4"/>
+              <circle cx="80" cy="42" r="3" fill="#FFD66B"/>
+              <path d="M80 42 H120 V62" stroke="#FFD66B" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+              <circle cx="120" cy="64" r="3.6" fill="#FFD66B"/>
+            </svg>
+          </div>
+        </div>
+        <div class="hero-greet">
+          <h1>嗨，备考人 👋</h1>
+          <p>我是你的 AI 备考老师，说出目标或困惑<br>我来帮你测评 · 规划 · 推题 · 批改</p>
+          <div class="online"><span class="dot"></span>在线 · 随时为你解答</div>
+        </div>
+      </div>
+
+      <div class="svc-wrap">
+        <div class="svc-label">AI 服务 · 快捷入口</div>
+        <div class="svc-strip" id="svcStrip"></div>
+      </div>
+
+      <div class="dock">
+        <div class="icon-btn" onclick="openCamera()" title="拍搜">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8a2 2 0 012-2h2l1.5-2h7L17 6h2a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+        </div>
+        <div class="input-wrap">
+          <input id="homeInput" placeholder="向 AI 老师提问…" autocomplete="off"
+                 oninput="toggleSend(this,'homeSend')"
+                 onkeydown="if(event.key==='Enter')sendFromHome()">
+          <div class="send-btn" id="homeSend" onclick="sendFromHome()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          </div>
+        </div>
+        <div class="icon-btn" onclick="voiceInput()" title="语音输入">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CHAT ============ -->
+    <div class="view" id="view-chat" data-level="1">
+      <div class="nav">
+        <div class="back" onclick="goHome()">
+          <svg viewBox="0 0 12 21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 1.5L2 10.5l8.5 9"/></svg>
+          首页
+        </div>
+        <div class="title">AI 备考老师</div>
+      </div>
+      <div class="chat-scroll" id="chatScroll"></div>
+      <div class="dock">
+        <div class="icon-btn" onclick="openCamera()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8a2 2 0 012-2h2l1.5-2h7L17 6h2a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/><circle cx="12" cy="12.5" r="3.4"/></svg>
+        </div>
+        <div class="input-wrap">
+          <input id="chatInput" placeholder="继续提问…" autocomplete="off"
+                 oninput="toggleSend(this,'chatSend')"
+                 onkeydown="if(event.key==='Enter')sendFromChat()">
+          <div class="send-btn" id="chatSend" onclick="sendFromChat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          </div>
+        </div>
+        <div class="icon-btn" onclick="voiceInput()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ FEATURE ============ -->
+    <div class="view" id="view-feature" data-level="2">
+      <div class="nav">
+        <div class="back" onclick="goBack()">
+          <svg viewBox="0 0 12 21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 1.5L2 10.5l8.5 9"/></svg>
+          对话
+        </div>
+        <div class="title" id="featTitle">功能</div>
+      </div>
+      <div id="featBody"></div>
+    </div>
+
+    <!-- ============ CAMERA ============ -->
+    <div class="view" id="view-camera" data-level="1">
+      <div class="cam-top">
+        <span class="cclose" onclick="goHome()">×</span>
+        <span class="ctitle">拍照搜题</span>
+        <span style="width:24px"></span>
+      </div>
+      <div class="cam-view">
+        <div class="frame">
+          <div class="scanline" id="scanline"></div>
+          <div class="corner tl"></div><div class="corner tr"></div>
+          <div class="corner bl"></div><div class="corner br"></div>
+          <div class="mockpaper">
+            <div class="mp-h">行测 · 资料分析（我的作答）</div>
+            <div class="mp-q">32. 2023年A市GDP增速约为？</div>
+            <div class="mp-q">我的答案：<span class="mp-ans" style="border-color:#FF3B30;color:#FF3B30;">B. 7.2%</span></div>
+            <div class="mp-q" style="margin-top:10px;">33. 增长量最多的季度是？</div>
+            <div class="mp-q">我的答案：<span class="mp-ans">C. 第三季度</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cam-tip" id="camTip">将题目 / 答题卡放入框内</div>
+      <div class="cam-bar">
+        <div class="shutter" id="shutter" onclick="capture()"></div>
+        <div class="cam-label" id="camLabel">轻点拍照</div>
+        <button class="cam-send" id="camSend" onclick="sendPhoto()">发送给 AI 老师</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Membership -->
+  <div class="mask" id="mask" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <div class="grip"></div>
+    <div class="vip-hero">
+      <div class="crown">👑</div>
+      <div class="vt">华图AI智学大会员</div>
+      <div class="vp">解锁全部 AI 老师能力</div>
+      <div class="vd">测评 · 能力图谱 · 学习计划 · 申论批改 · 面试点评 · 督学陪练，全年不限次</div>
+      <div class="vip-price"><span class="now">¥499</span><span class="was">¥1280</span><span class="per">/ 年</span></div>
+    </div>
+    <div style="margin-top:8px;">
+      <div class="perk"><span class="pk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg></span>AI 申论批改 / 面试点评 不限次</div>
+      <div class="perk"><span class="pk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg></span>个性化能力图谱与学习计划</div>
+      <div class="perk"><span class="pk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg></span>真题题库 + 模考全开放</div>
+      <div class="perk"><span class="pk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg></span>督学提醒与每周学情报告</div>
+    </div>
+    <button class="pill-btn" onclick="activateVip()">立即开通 · ¥499/年</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ============== DATA ============== */
+var ABILITY = [
+  {name:'常识判断', short:'常识', score:74},
+  {name:'言语理解', short:'言语', score:78},
+  {name:'数量关系', short:'数量', score:52},
+  {name:'判断推理', short:'判断', score:81},
+  {name:'资料分析', short:'资料', score:69},
+  {name:'申论',     short:'申论', score:65}
+];
+var GOAL = '省考 · 行政执法类';
+
+var SERVICES = {
+  assessment:{ t:'测评', sub:'考试目标 + 能力测评', color:'#5E5CE6', bg:'#ECECFE',
+    prompt:'我想做个能力测评', icon:'clipboard' },
+  ability:{ t:'能力图谱', sub:'你的六维能力模型', color:'#0A84FF', bg:'#E5F1FF',
+    prompt:'请给我发一下我当前的能力模型', icon:'radar' },
+  plan:{ t:'学习计划', sub:'AI 生成每日任务', color:'#34C759', bg:'#E5F8EC',
+    prompt:'帮我生成本周学习计划', icon:'calendar' },
+  report:{ t:'学情报告', sub:'能力变化趋势', color:'#FF9F0A', bg:'#FFF2DD',
+    prompt:'看看我最近的学情报告', icon:'chart' },
+  correction:{ t:'AI申论批改', sub:'秒级评分 + 修改建议', color:'#FF375F', bg:'#FFE6EC',
+    prompt:'帮我批改一篇申论', icon:'pen' },
+  interview:{ t:'AI面试点评', sub:'结构化面试模拟', color:'#AF52DE', bg:'#F4E8FC',
+    prompt:'帮我做一次面试点评', icon:'mic' },
+  question:{ t:'题目推送', sub:'按薄弱项智能推题', color:'#0A84FF', bg:'#E5F1FF',
+    prompt:'给我推几道薄弱项的题', icon:'list' },
+  course:{ t:'课程推送', sub:'针对性精讲课', color:'#FF9500', bg:'#FFF0DD',
+    prompt:'推荐适合我的课程', icon:'play' },
+  mock:{ t:'模考推送', sub:'全真模拟考试', color:'#30B0C7', bg:'#E2F5F8',
+    prompt:'安排一次模考', icon:'timer' },
+  supervise:{ t:'督学', sub:'定期学习提醒', color:'#FF6482', bg:'#FFE9EE',
+    prompt:'帮我设置每日督学提醒', icon:'bell' },
+  weekly:{ t:'学习周报', sub:'每周学习成果', color:'#32ADE6', bg:'#E2F4FB',
+    prompt:'看看我的本周学习周报', icon:'doc' }
+};
+
+var ICONS = {
+  clipboard:'<path d="M9 4h6v3H9z"/><path d="M9 5H6v15h12V5h-3"/><path d="M9 11h6M9 15h4" stroke-linecap="round"/>',
+  radar:'<polygon points="12,3 20,8 18,18 6,18 4,8"/><polygon points="12,8 15.5,10.5 14.5,15 9.5,15 8.5,10.5"/>',
+  calendar:'<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4" stroke-linecap="round"/>',
+  chart:'<path d="M4 19h16M7 16v-5M12 16V8M17 16v-7" stroke-linecap="round"/>',
+  pen:'<path d="M4 20l4-1 9.5-9.5-3-3L5 16l-1 4z"/><path d="M14 6l3 3" stroke-linecap="round"/>',
+  mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3" stroke-linecap="round"/>',
+  list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" stroke-linecap="round"/>',
+  play:'<circle cx="12" cy="12" r="9"/><path d="M10 9l5 3-5 3z" fill="currentColor" stroke="none"/>',
+  timer:'<circle cx="12" cy="13" r="8"/><path d="M12 13V9M9 2h6" stroke-linecap="round"/>',
+  bell:'<path d="M6 16V11a6 6 0 1112 0v5l2 2H4l2-2z"/><path d="M10 20a2 2 0 004 0" stroke-linecap="round"/>',
+  doc:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6" stroke-linecap="round"/>',
+  more:'<circle cx="6" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.6" fill="currentColor" stroke="none"/>'
+};
+function svgIcon(name,color){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="'+(color||'currentColor')+'" stroke-width="1.7" stroke-linejoin="round">'+ICONS[name]+'</svg>';
+}
+
+var HOME_QUICK = ['assessment','ability','plan','report','correction'];
+var SUGGESTS = [
+  {txt:'我数量关系总是做不完', tip:'薄弱项诊断'},
+  {txt:'帮我规划今天学什么', tip:'每日任务'},
+  {txt:'批改我刚写的申论大作文', tip:'申论批改'},
+  {txt:'最近学得怎么样？', tip:'学情趋势'}
+];
+
+var isVip = false;
+
+/* ============== NAV ============== */
+var navStack = ['home'];
+function renderViews(){
+  var top = navStack[navStack.length-1];
+  var below = navStack[navStack.length-2];
+  document.querySelectorAll('.view').forEach(function(v){
+    var id = v.id.replace('view-','');
+    v.classList.remove('active','behind');
+    if(id===top){ v.classList.add('active'); v.style.zIndex=20; }
+    else if(id===below){ v.classList.add('behind'); v.style.zIndex=10; }
+    else { v.style.zIndex=1; }
+  });
+}
+function pushView(id){ if(navStack[navStack.length-1]!==id){navStack.push(id);} renderViews(); }
+function goBack(){ if(navStack.length>1) navStack.pop(); renderViews(); }
+function goHome(){ navStack=['home']; renderViews(); }
+
+/* ============== HOME RENDER ============== */
+function buildHome(){
+  var svc=document.getElementById('svcStrip'); svc.innerHTML='';
+  HOME_QUICK.forEach(function(k){
+    var s=SERVICES[k];
+    var d=document.createElement('div'); d.className='svc-item';
+    d.innerHTML='<div class="si-ico" style="background:'+s.bg+'">'+svgIcon(s.icon,s.color)+'</div><div class="si-l">'+s.t+'</div>';
+    d.onclick=(function(kk){return function(){quickEntry(kk);};})(k);
+    svc.appendChild(d);
+  });
+  var more=document.createElement('div'); more.className='svc-item';
+  more.innerHTML='<div class="si-ico" style="background:#F2F2F7">'+svgIcon('more','#8E8E93')+'</div><div class="si-l">更多</div>';
+  more.onclick=showMore;
+  svc.appendChild(more);
+  startPlaceholderCycle();
+}
+
+/* cycling suggestion placeholder in the home input */
+var PH_SUGGEST = ['我的数量关系怎么提升？','帮我规划今天学什么','批改我刚写的申论','最近学得怎么样？','哪个模块是我的薄弱项？','给我推几道行测真题'];
+var phIdx=0, phTimer=null;
+function startPlaceholderCycle(){
+  var inp=document.getElementById('homeInput'); if(!inp) return;
+  inp.placeholder=PH_SUGGEST[0];
+  if(phTimer) clearInterval(phTimer);
+  phTimer=setInterval(function(){
+    if(document.activeElement===inp || inp.value){ return; }
+    inp.classList.add('ph-fade');
+    setTimeout(function(){
+      phIdx=(phIdx+1)%PH_SUGGEST.length;
+      inp.placeholder=PH_SUGGEST[phIdx];
+      inp.classList.remove('ph-fade');
+    },260);
+  },2900);
+}
+
+/* ============== INPUT ============== */
+function toggleSend(input,btnId){
+  document.getElementById(btnId).classList.toggle('on', input.value.trim().length>0);
+}
+function sendFromHome(){
+  var v=document.getElementById('homeInput').value.trim(); if(!v) return;
+  document.getElementById('homeInput').value='';
+  document.getElementById('homeSend').classList.remove('on');
+  startChat(v);
+}
+function sendFromChat(){
+  var v=document.getElementById('chatInput').value.trim(); if(!v) return;
+  document.getElementById('chatInput').value='';
+  document.getElementById('chatSend').classList.remove('on');
+  userSays(v);
+}
+function quickEntry(k){ startChat(SERVICES[k].prompt, k); }
+function quickAsk(t){ startChat(t); }
+function voiceInput(){
+  showToast('🎙️ 聆听中…','listen');
+  setTimeout(function(){
+    hideToast();
+    startChat('我最近做题总错，感觉很乱，不知道该怎么学');
+  },1100);
+}
+
+/* ============== CHAT ENGINE ============== */
+function resetChat(){
+  document.getElementById('chatScroll').innerHTML='';
+  aiBubble('你好，我是你的 AI 备考老师 👩‍🏫<br>告诉我你的目标或困惑，我来帮你测评、规划、推题、批改。');
+}
+function startChat(text, directKey){
+  if(!isVip){ openSheet(true); pendingChat={text:text,key:directKey}; return; }
+  resetChat();
+  pushView('chat');
+  setTimeout(function(){ userSays(text, directKey); }, 320);
+}
+var pendingChat=null;
+
+function scrollChat(){ var s=document.getElementById('chatScroll'); s.parentNode.scrollTop; setTimeout(function(){ s.scrollTop=s.scrollHeight; var v=document.getElementById('view-chat'); v.scrollTop=v.scrollHeight; },30); }
+
+function userBubble(html, isImg){
+  var s=document.getElementById('chatScroll');
+  var row=document.createElement('div'); row.className='row me';
+  row.innerHTML='<div class="bubble '+(isImg?'img':'')+'">'+html+'</div>';
+  s.appendChild(row); scrollChat();
+}
+function aiBubble(html){
+  var s=document.getElementById('chatScroll');
+  var row=document.createElement('div'); row.className='row ai';
+  row.innerHTML='<div class="avatar sm"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l9 4-9 4-9-4 9-4z" fill="#fff"/><path d="M6 9.5V14c0 1.7 2.7 3 6 3s6-1.3 6-3V9.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></div>'
+    +'<div class="bubble">'+html+'</div>';
+  s.appendChild(row); scrollChat();
+  return row;
+}
+function aiThinking(cb,delay){
+  var s=document.getElementById('chatScroll');
+  var row=document.createElement('div'); row.className='row ai';
+  row.innerHTML='<div class="avatar sm"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l9 4-9 4-9-4 9-4z" fill="#fff"/><path d="M6 9.5V14c0 1.7 2.7 3 6 3s6-1.3 6-3V9.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></div>'
+    +'<div class="bubble" style="padding:0;"><div class="typing"><span></span><span></span><span></span></div></div>';
+  s.appendChild(row); scrollChat();
+  setTimeout(function(){ row.remove(); cb(); }, delay||1000);
+}
+
+function detectIntent(t){
+  if(/能力(图谱|模型|水平)?|图谱|强项|薄弱项|哪.*薄弱|短板|水平怎么/.test(t)) return 'ability';
+  if(/测评|测一测|测试|评估|摸底/.test(t)) return 'assessment';
+  if(/计划|规划|学什么|安排|今天学|每天学/.test(t)) return 'plan';
+  if(/学情|报告|趋势|进步|提升.*多少|怎么样了/.test(t)) return 'report';
+  if(/申论|大作文|作文|批改/.test(t)) return 'correction';
+  if(/面试|点评|结构化/.test(t)) return 'interview';
+  if(/推题|刷题|做题|题目|练.*题/.test(t)) return 'question';
+  if(/课程|精讲|听课|视频课/.test(t)) return 'course';
+  if(/模考|模拟考/.test(t)) return 'mock';
+  if(/周报/.test(t)) return 'weekly';
+  if(/督学|提醒|监督/.test(t)) return 'supervise';
+  return 'vague';
+}
+
+function userSays(text, directKey){
+  userBubble(escapeHtml(text));
+  var key = directKey || detectIntent(text);
+  aiThinking(function(){
+    if(key==='vague'){ askClarify(); }
+    else { respondWith(key); }
+  }, 950);
+}
+
+function askClarify(){
+  var row=aiBubble('我先帮你理一理 😊 你现在最想先解决哪件事？点一下，我马上帮你处理：');
+  var chips=document.createElement('div'); chips.className='chips';
+  [['ability','看看我的薄弱项'],['plan','制定学习计划'],['assessment','做个能力测评'],['question','推几道题练手']].forEach(function(c){
+    var b=document.createElement('div'); b.className='chip'; b.textContent=c[1];
+    b.onclick=function(){ userSays(c[1], c[0]); };
+    chips.appendChild(b);
+  });
+  row.querySelector('.bubble').appendChild(chips);
+  scrollChat();
+}
+
+function respondWith(key){
+  var lines={
+    ability:'已经为你生成<b>六维能力图谱</b>。整体偏均衡，<b>判断推理</b>是强项，<b>数量关系</b>明显偏弱，建议优先突破。',
+    assessment:'好的，先做一个 10 分钟<b>能力测评</b>，确认你的考试目标和当前水平，我再据此规划。',
+    plan:'根据你的目标「'+GOAL+'」和薄弱项，已生成<b>本周学习计划</b>，今日 4 个任务，进度 62%。',
+    report:'这是你最近一周的<b>学情报告</b>。数量关系正确率从 48% 提升到 61%，进步明显，继续保持！',
+    correction:'把你的申论大作文发给我即可。先看一篇你上次的批改结果——<b>38/50</b>，论点扣分较多。',
+    interview:'已为你准备一道结构化面试题，录音作答后我会从内容、逻辑、表达三方面点评。',
+    question:'根据薄弱项「数量关系」，为你智能推送了一组练习题，先来 5 道？',
+    course:'结合你的薄弱项，为你推荐了 2 节针对性精讲课。',
+    mock:'已为你安排一场全真模考（行测 120 分钟），随时可开考。',
+    weekly:'这是你本周的<b>学习周报</b>：学习 9.5 小时，做题 320 道，正确率 71%。',
+    supervise:'好的，已开启<b>督学提醒</b>，每天 20:00 提醒你完成当日任务。'
+  };
+  aiBubble(lines[key]||'好的，已为你调用相应功能。');
+  setTimeout(function(){ appendCard(key); }, 200);
+}
+
+/* ---- function card as a standalone AI message ---- */
+function appendCard(key){
+  var s=SERVICES[key];
+  var preview = cardPreview(key);
+  var s2=document.getElementById('chatScroll');
+  var row=document.createElement('div'); row.className='row ai card-row';
+  var card=document.createElement('div'); card.className='fcard'; card.onclick=function(){ openFeature(key); };
+  card.innerHTML='<div class="fc-head"><div class="fc-tag" style="background:'+s.bg+'">'+svgIcon(s.icon,s.color)+'</div>'
+    +'<div><div class="ft">'+s.t+'</div><div class="fs">'+s.sub+'</div></div></div>'
+    +'<div class="fc-body">'+preview+'</div>'
+    +'<div class="fc-foot"><span>点击进入 '+s.t+'</span>'
+    +'<svg viewBox="0 0 12 21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5l8.5 9-8.5 9"/></svg></div>';
+  row.appendChild(card);
+  s2.appendChild(row);
+  scrollChat();
+}
+
+function cardPreview(key){
+  if(key==='ability'){
+    return '<div style="display:flex;gap:14px;align-items:center;">'+radarSVG(96,false)
+      +'<div class="mini-bars" style="flex:1;">'+miniBars(ABILITY.slice(0,4))+'</div></div>';
+  }
+  if(key==='plan'){
+    return '<div style="font-size:13px;color:var(--text-2);">今日任务 4 项 · 已完成 1 项</div>'
+      +'<div class="progress-line"><div style="width:62%"></div></div>'
+      +'<div style="font-size:12px;color:var(--text-3);margin-top:8px;">数量·行程问题 · 资料分析 1 套 · 申论范文精读…</div>';
+  }
+  if(key==='report'){
+    return '<div style="font-size:13px;color:var(--text-2);margin-bottom:8px;">数量关系正确率 · 近 4 周</div>'+trendSVG([48,52,57,61]);
+  }
+  if(key==='correction'){
+    return '<div style="display:flex;align-items:center;gap:12px;">'+miniRing(38,50,'#FF375F')
+      +'<div style="font-size:12.5px;color:var(--text-2);line-height:1.5;">上次大作文得分<br>论点清晰度待提升</div></div>';
+  }
+  if(key==='assessment'){
+    return '<div style="font-size:13px;color:var(--text-2);line-height:1.55;">📋 10 分钟摸底 · 6 大模块<br>测完自动生成能力图谱</div>';
+  }
+  if(key==='question'){
+    return '<div style="font-size:13.5px;line-height:1.6;">📝 数量关系 · 行程问题<br><span style="color:var(--text-3);font-size:12.5px;">5 道精选 · 配视频解析</span></div>';
+  }
+  if(key==='report'||key==='weekly'){
+    return '<div class="stat-grid" style="margin:0;"><div class="stat"><div class="n">9.5h</div><div class="l">学习</div></div><div class="stat"><div class="n">320</div><div class="l">做题</div></div><div class="stat"><div class="n">71%</div><div class="l">正确率</div></div></div>';
+  }
+  if(key==='interview') return '<div style="font-size:13px;color:var(--text-2);">🎤 结构化面试 · AI 多维点评</div>';
+  if(key==='course') return '<div style="font-size:13px;color:var(--text-2);">🎬 数量关系秒杀技巧（2 节）</div>';
+  if(key==='mock') return '<div style="font-size:13px;color:var(--text-2);">⏱️ 行测全真模考 · 120 分钟</div>';
+  if(key==='supervise') return '<div style="font-size:13px;color:var(--text-2);">🔔 每天 20:00 提醒你完成任务</div>';
+  return '';
+}
+function miniBars(arr){
+  return arr.map(function(m){
+    var c = m.score>=75?'#34C759':(m.score<60?'#FF3B30':'#FF9F0A');
+    return '<div class="mb-row"><span class="mb-l">'+m.short+'</span><div class="mb-track"><div class="mb-fill" style="width:'+m.score+'%;background:'+c+'"></div></div><span class="mb-v">'+m.score+'</span></div>';
+  }).join('');
+}
+
+function showMore(){
+  if(!isVip){ openSheet(true); pendingChat={more:true}; return; }
+  resetChat(); pushView('chat');
+  setTimeout(function(){
+    userBubble('还有哪些 AI 功能？');
+    aiThinking(function(){
+      var row=aiBubble('我还能帮你做这些，点一下直接开始：');
+      var chips=document.createElement('div'); chips.className='chips';
+      ['question','course','mock','weekly','interview','supervise'].forEach(function(k){
+        var b=document.createElement('div'); b.className='chip'; b.textContent=SERVICES[k].t;
+        b.onclick=(function(kk){return function(){ userSays(SERVICES[kk].prompt, kk); };})(k);
+        chips.appendChild(b);
+      });
+      row.querySelector('.bubble').appendChild(chips); scrollChat();
+    },800);
+  },320);
+}
+
+/* ============== SVG WIDGETS ============== */
+function radarSVG(size, withLabels){
+  var n=ABILITY.length, cx=size/2, cy=size/2, R=size*(withLabels?0.32:0.40);
+  var rings='';
+  [0.25,0.5,0.75,1].forEach(function(f){
+    var pts=ABILITY.map(function(_,i){var a=-Math.PI/2+i*2*Math.PI/n;return (cx+R*f*Math.cos(a))+','+(cy+R*f*Math.sin(a));}).join(' ');
+    rings+='<polygon points="'+pts+'" fill="none" stroke="rgba(60,60,67,.12)" stroke-width="1"/>';
+  });
+  var axes=''; ABILITY.forEach(function(_,i){var a=-Math.PI/2+i*2*Math.PI/n;axes+='<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+R*Math.cos(a))+'" y2="'+(cy+R*Math.sin(a))+'" stroke="rgba(60,60,67,.1)"/>';});
+  var dpts=ABILITY.map(function(m,i){var a=-Math.PI/2+i*2*Math.PI/n;var r=R*m.score/100;return (cx+r*Math.cos(a))+','+(cy+r*Math.sin(a));}).join(' ');
+  var dots=ABILITY.map(function(m,i){var a=-Math.PI/2+i*2*Math.PI/n;var r=R*m.score/100;return '<circle cx="'+(cx+r*Math.cos(a))+'" cy="'+(cy+r*Math.sin(a))+'" r="2.8" fill="#007AFF"/>';}).join('');
+  var labels='';
+  if(withLabels){
+    ABILITY.forEach(function(m,i){var a=-Math.PI/2+i*2*Math.PI/n;var lr=R+18;var x=cx+lr*Math.cos(a);var y=cy+lr*Math.sin(a);
+      var anch=Math.abs(Math.cos(a))<0.3?'middle':(Math.cos(a)>0?'start':'end');
+      labels+='<text x="'+x+'" y="'+(y+4)+'" font-size="11" font-weight="600" fill="#3c3c43" text-anchor="'+anch+'">'+m.short+'</text>';
+      labels+='<text x="'+x+'" y="'+(y+16)+'" font-size="9" fill="#aeaeb2" text-anchor="'+anch+'">'+m.score+'</text>';
+    });
+  }
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">'+rings+axes
+    +'<polygon points="'+dpts+'" fill="rgba(10,132,255,.18)" stroke="#007AFF" stroke-width="2" stroke-linejoin="round"/>'+dots+labels+'</svg>';
+}
+function trendSVG(vals){
+  var w=200,h=56,pad=6;
+  var max=Math.max.apply(null,vals)+8, min=Math.min.apply(null,vals)-8;
+  var pts=vals.map(function(v,i){var x=pad+i*(w-2*pad)/(vals.length-1);var y=h-pad-(v-min)/(max-min)*(h-2*pad);return x+','+y;});
+  var line=pts.join(' ');
+  var area='M'+pts[0]+' L'+pts.slice(1).join(' L')+' L'+(w-pad)+','+(h-pad)+' L'+pad+','+(h-pad)+' Z';
+  var dots=pts.map(function(p){var c=p.split(',');return '<circle cx="'+c[0]+'" cy="'+c[1]+'" r="3" fill="#FF9F0A"/>';}).join('');
+  return '<svg width="100%" height="'+h+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><path d="'+area+'" fill="rgba(255,159,10,.12)"/><polyline points="'+line+'" fill="none" stroke="#FF9F0A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'+dots+'</svg>';
+}
+function miniRing(val,total,color){
+  var pct=val/total, r=26, c=2*Math.PI*r, off=c*(1-pct);
+  return '<div class="score-ring" style="width:64px;height:64px;"><svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="'+r+'" fill="none" stroke="#F2F2F7" stroke-width="6"/><circle cx="32" cy="32" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="6" stroke-linecap="round" stroke-dasharray="'+c+'" stroke-dashoffset="'+off+'" transform="rotate(-90 32 32)"/></svg><div class="rn"><b style="font-size:18px;">'+val+'</b></div></div>';
+}
+function bigRing(val,total,color){
+  var pct=val/total, r=40, c=2*Math.PI*r, off=c*(1-pct);
+  return '<div class="score-ring"><svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="'+r+'" fill="none" stroke="#F2F2F7" stroke-width="8"/><circle cx="48" cy="48" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+c+'" stroke-dashoffset="'+off+'" transform="rotate(-90 48 48)"/></svg><div class="rn"><b>'+val+'</b><span>/ '+total+'</span></div></div>';
+}
+
+/* ============== FEATURE PAGES ============== */
+function openFeature(key){
+  document.getElementById('featTitle').textContent=SERVICES[key].t;
+  document.getElementById('featBody').innerHTML=featContent(key);
+  pushView('feature');
+  document.getElementById('view-feature').scrollTop=0;
+}
+function featContent(key){
+  if(key==='ability') return abilityPage();
+  if(key==='plan') return planPage();
+  if(key==='report'||key==='weekly') return reportPage(key);
+  if(key==='correction') return correctionPage();
+  if(key==='assessment') return assessmentPage();
+  return genericPage(key);
+}
+function abilityPage(){
+  var sorted=ABILITY.slice().sort(function(a,b){return b.score-a.score;});
+  var rows=sorted.map(function(m){
+    var c=m.score>=75?'#34C759':(m.score<60?'#FF3B30':'#FF9F0A');
+    var badge=m.score>=78?'<span class="badge strong">强项</span>':(m.score<60?'<span class="badge weak">薄弱</span>':'');
+    return '<div class="mod"><span class="mn">'+m.name+' '+badge+'</span><div class="mtrack"><div style="width:'+m.score+'%;background:'+c+'"></div></div><span class="mscore">'+m.score+'</span></div>';
+  }).join('');
+  return '<div class="fp"><h2>能力图谱</h2><p class="lead">目标：'+GOAL+' · 综合掌握度 70 分</p>'
+    +'<div class="panel" style="display:flex;justify-content:center;padding:24px 18px 10px;">'+radarSVG(240,true)+'</div>'
+    +'<div class="panel"><div class="panel-h">六维明细</div><div class="mod-list">'+rows+'</div></div>'
+    +'<div class="tip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2zM9 21h6"/></svg><div><b>AI 建议：</b>数量关系（52）是最大短板，拉低整体分。建议本周集中突破「行程 / 工程 / 排列组合」三类高频题型，预计可提升 8–12 分。</div></div>'
+    +'<button class="pill-btn" onclick="openFeature(\'plan\')">据此生成学习计划</button>'
+    +'<button class="pill-btn ghost" onclick="goBack()">返回对话</button></div>';
+}
+function planPage(){
+  var tasks=[
+    {t:'数量关系 · 行程问题 15 题',tag:'薄弱突破',sub:'约 30 分钟',done:false},
+    {t:'资料分析 1 套（25 题）',tag:'限时训练',sub:'约 25 分钟',done:false},
+    {t:'申论范文精读 1 篇',tag:'申论积累',sub:'约 20 分钟',done:false},
+    {t:'判断推理错题回顾',tag:'巩固',sub:'约 15 分钟',done:true}
+  ];
+  var list=tasks.map(function(t,i){
+    return '<div class="task '+(t.done?'done':'')+'" onclick="toggleTask(this)"><div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div>'
+      +'<div class="tx"><div class="tt">'+t.t+'</div><div class="ttag">'+t.sub+'</div></div><span class="subtag">'+t.tag+'</span></div>';
+  }).join('');
+  return '<div class="fp"><h2>本周学习计划</h2><p class="lead">'+GOAL+' · 距省考还有 86 天</p>'
+    +'<div class="panel"><div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-weight:700;font-size:16px;">本周进度</span><span style="font-weight:800;color:var(--blue);">62%</span></div><div class="progress-line"><div style="width:62%"></div></div><div style="font-size:12px;color:var(--text-3);margin-top:10px;">已完成 13 / 21 个任务，超过 78% 的同目标考生 🎉</div></div>'
+    +'<div class="panel"><div class="panel-h">今日任务 · 周一</div><div class="mod-list">'+list+'</div></div>'
+    +'<button class="pill-btn" onclick="openFeature(\'question\')">开始第一项任务</button>'
+    +'<button class="pill-btn ghost" onclick="showToast(\'已重新生成本周计划\')">重新生成计划</button></div>';
+}
+function toggleTask(el){ el.classList.toggle('done'); }
+function reportPage(key){
+  var title = key==='weekly'?'学习周报':'学情报告';
+  return '<div class="fp"><h2>'+title+'</h2><p class="lead">2026.06.16 – 06.22 · 第 12 周</p>'
+    +'<div class="stat-grid"><div class="stat"><div class="n">9.5<span style="font-size:14px">h</span></div><div class="l">学习时长</div></div><div class="stat"><div class="n">320</div><div class="l">做题数</div></div><div class="stat"><div class="n">71%</div><div class="l">正确率</div></div></div>'
+    +'<div class="panel"><div class="panel-h">数量关系正确率 · 近 4 周</div><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;"><span style="font-size:30px;font-weight:800;">61%</span><span style="color:var(--good);font-weight:700;font-size:14px;">↑ 13%</span></div>'+trendSVG([48,52,57,61])
+    +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-top:4px;"><span>4 周前</span><span>3 周前</span><span>上周</span><span>本周</span></div></div>'
+    +'<div class="tip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5l3 2" stroke-linecap="round"/></svg><div><b>本周亮点：</b>数量关系连续 4 周稳定上升，行程问题正确率已达 78%。<br><b>下周关注：</b>资料分析速度偏慢，平均每题 95 秒，建议专项限时训练。</div></div>'
+    +'<button class="pill-btn" onclick="openFeature(\'plan\')">查看下周计划</button>'
+    +'<button class="pill-btn ghost" onclick="goBack()">返回对话</button></div>';
+}
+function correctionPage(){
+  var dims=[['论点',7,10],['结构',8,10],['论据',7,10],['语言',8,10],['书写',8,10]];
+  var bars=dims.map(function(d){var c=d[1]>=8?'#34C759':'#FF9F0A';return '<div class="mb-row" style="font-size:13px;"><span class="mb-l" style="width:40px;">'+d[0]+'</span><div class="mb-track" style="height:8px;"><div class="mb-fill" style="width:'+(d[1]/d[2]*100)+'%;background:'+c+'"></div></div><span class="mb-v">'+d[1]+'</span></div>';}).join('');
+  return '<div class="fp"><h2>AI 申论批改</h2><p class="lead">《论基层治理的"绣花"功夫》· 申发论述</p>'
+    +'<div class="panel"><div class="ring-wrap">'+bigRing(38,50,'#FF375F')+'<div style="flex:1;"><div style="font-weight:700;font-size:16px;margin-bottom:8px;">五维评分</div>'+bars+'</div></div></div>'
+    +'<div class="panel"><div class="panel-h" style="color:#34C759;">✓ 亮点</div><div style="font-size:14px;line-height:1.7;color:var(--text);">结构完整，总分总清晰；首段引用得当，能扣住"精细化"主题；语言较为规范，过渡自然。</div></div>'
+    +'<div class="panel"><div class="panel-h" style="color:#FF3B30;">✕ 主要扣分点</div><div style="font-size:14px;line-height:1.7;">① 分论点之间逻辑层次不清，"机制"与"作风"存在交叉；<br>② 论据以理论为主，缺少具体案例支撑；<br>③ 结尾升华略显空泛。</div></div>'
+    +'<div class="tip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l4-1 9.5-9.5-3-3L5 16z" stroke-linejoin="round"/></svg><div><b>修改建议：</b>将三个分论点改为"理念精细—机制精细—服务精细"的递进结构，每段补 1 个具体事例（如"接诉即办"），结尾呼应开头并落到考生角色，预计可提升至 42 分。</div></div>'
+    +'<button class="pill-btn" onclick="showToast(\'📷 请拍照或粘贴新的作文\')">批改新的作文</button>'
+    +'<button class="pill-btn ghost" onclick="goBack()">返回对话</button></div>';
+}
+function assessmentPage(){
+  return '<div class="fp"><h2>能力测评</h2><p class="lead">10 分钟 · 6 大模块 · 自适应难度</p>'
+    +'<div class="panel"><div style="font-size:14px;line-height:1.7;color:var(--text);">本测评将快速诊断你在<b>常识、言语、数量、判断、资料、申论</b>六大模块的当前水平，并据此生成专属能力图谱与学习计划。</div></div>'
+    +'<div class="panel" id="qaPanel"><div class="panel-h">示例题 · 第 1 / 10 题</div>'
+    +'<div class="progress-line" style="margin-bottom:14px;"><div style="width:10%" id="qaBar"></div></div>'
+    +'<div class="qa"><div class="q">「行百里者半九十」最适合用于强调？</div>'
+    +'<div class="opt" onclick="pickOpt(this)"><span class="ol">A</span>做事要趁早</div>'
+    +'<div class="opt" onclick="pickOpt(this)"><span class="ol">B</span>越接近成功越要坚持</div>'
+    +'<div class="opt" onclick="pickOpt(this)"><span class="ol">C</span>过程比结果重要</div>'
+    +'<div class="opt" onclick="pickOpt(this)"><span class="ol">D</span>失败乃成功之母</div></div></div>'
+    +'<button class="pill-btn" onclick="openFeature(\'ability\')">提交并生成能力图谱</button>'
+    +'<button class="pill-btn ghost" onclick="goBack()">稍后再测</button></div>';
+}
+function pickOpt(el){ el.parentNode.querySelectorAll('.opt').forEach(function(o){o.classList.remove('sel');}); el.classList.add('sel'); }
+function genericPage(key){
+  var s=SERVICES[key];
+  var body={
+    question:'<div class="panel"><div class="panel-h">数量关系 · 行程问题</div><div style="font-size:15px;line-height:1.7;">1. 甲乙两地相距 240 公里，A 车速 60km/h，B 车速 80km/h，相向而行几小时相遇？</div><div class="opt" onclick="pickOpt(this)"><span class="ol">A</span>1.5 小时</div><div class="opt" onclick="pickOpt(this)"><span class="ol">B</span><b style="color:var(--blue)">约 1.71 小时</b></div><div class="opt" onclick="pickOpt(this)"><span class="ol">C</span>2 小时</div></div><div class="tip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v6" stroke-linecap="round"/></svg><div>共 5 道精选题，每题配 30 秒视频解析与同类拓展。</div></div>',
+    course:'<div class="feat-list"><div class="feat-item"><div class="fi-ico" style="background:#FFF0DD"><svg viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M10 9l5 3-5 3z" fill="#FF9500" stroke="none"/></svg></div><div><div class="fi-t">数量关系秒杀技巧（上）</div><div class="fi-d">行程·工程问题 · 42 分钟</div></div></div><div class="feat-item"><div class="fi-ico" style="background:#FFF0DD"><svg viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M10 9l5 3-5 3z" fill="#FF9500" stroke="none"/></svg></div><div><div class="fi-t">资料分析提速专题</div><div class="fi-d">速算技巧 · 38 分钟</div></div></div></div>',
+    mock:'<div class="panel" style="text-align:center;padding:30px 18px;"><div style="font-size:48px;">⏱️</div><div style="font-size:18px;font-weight:700;margin-top:8px;">行测全真模考</div><div style="color:var(--text-2);font-size:13.5px;margin-top:6px;">120 分钟 · 130 题 · 含省考真题</div></div>',
+    interview:'<div class="panel"><div class="panel-h">结构化面试 · 综合分析</div><div style="font-size:15px;line-height:1.7;">有人说"基层工作千头万绪，关键在落实"，请谈谈你的理解。</div></div><div class="panel" style="text-align:center;"><div style="font-size:13px;color:var(--text-2);margin-bottom:12px;">点击下方按钮开始录音作答，AI 将从内容、逻辑、表达三维点评</div><div class="avatar" style="margin:0 auto;background:var(--bad);"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3" stroke-linecap="round"/></svg></div></div>',
+    supervise:'<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:700;font-size:16px;">每日学习提醒</div><div style="color:var(--text-2);font-size:13px;margin-top:4px;">每天 20:00 · 已开启</div></div><div style="width:50px;height:30px;border-radius:999px;background:var(--good);position:relative;"><div style="width:26px;height:26px;border-radius:50%;background:#fff;position:absolute;top:2px;right:2px;box-shadow:0 1px 3px rgba(0,0,0,.2);"></div></div></div></div><div class="tip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 16V11a6 6 0 1112 0v5l2 2H4z" stroke-linejoin="round"/></svg><div>连续打卡 12 天，今日任务还差 3 项，加油！</div></div>'
+  };
+  return '<div class="fp"><h2>'+s.t+'</h2><p class="lead">'+s.sub+'</p>'+(body[key]||'<div class="panel">功能演示</div>')
+    +'<button class="pill-btn ghost" onclick="goBack()">返回对话</button></div>';
+}
+
+/* ============== CAMERA ============== */
+function openCamera(){
+  document.getElementById('camSend').classList.remove('show');
+  document.getElementById('camLabel').style.display='block';
+  document.getElementById('shutter').style.display='block';
+  document.getElementById('scanline').style.display='block';
+  document.getElementById('camTip').textContent='将题目 / 答题卡放入框内';
+  pushView('camera');
+}
+function capture(){
+  document.getElementById('scanline').style.display='none';
+  document.getElementById('camLabel').style.display='none';
+  document.getElementById('shutter').style.display='none';
+  document.getElementById('camTip').textContent='已拍摄，确认发送给 AI 老师识别';
+  document.getElementById('camSend').classList.add('show');
+}
+function sendPhoto(){
+  if(!isVip){ openSheet(true); pendingChat={photo:true}; return; }
+  resetChat();
+  navStack=['home','chat']; renderViews();
+  setTimeout(function(){
+    userBubble('<div class="mockpaper" style="width:200px;padding:12px;font-size:10px;"><div class="mp-h" style="font-size:11px;">行测·资料分析</div><div>32. GDP增速？<span class="mp-ans" style="border-color:#FF3B30;color:#FF3B30;font-size:9px;">B 7.2%</span></div><div>33. 增长量最多季度？<span class="mp-ans" style="font-size:9px;">C 第三季度</span></div></div>', true);
+    aiThinking(function(){
+      aiBubble('已识别你的答题卡，共 2 题，<b>对 1 错 1</b> 👇<br><br><b>32 题 ❌</b> 你选 B(7.2%)，正确答案 <b>C(8.1%)</b>。<br>错因：基期值用错，应是「现期÷(1+增速)」。<br><br><b>33 题 ✅</b> 回答正确，方法得当。');
+      setTimeout(function(){
+        aiBubble('这类「增长率计算」是你的高频错点，给你配了针对训练：');
+        setTimeout(function(){ appendCard('question'); setTimeout(function(){appendCard('course');},250); },200);
+      },400);
+    },1300);
+  },320);
+}
+
+/* ============== MEMBERSHIP ============== */
+function openSheet(forced){
+  document.getElementById('mask').classList.add('show');
+  document.getElementById('sheet').classList.add('show');
+  sheetForced = !!forced;
+}
+var sheetForced=false;
+function closeSheet(){
+  document.getElementById('mask').classList.remove('show');
+  document.getElementById('sheet').classList.remove('show');
+  pendingChat=null;
+}
+function activateVip(){
+  isVip=true;
+  document.getElementById('vipBtn').classList.add('on');
+  document.getElementById('vipText').textContent='AI智学会员';
+  closeSheet();
+  showToast('您已开通华图AI智学大会员','check');
+  setTimeout(function(){
+    hideToast();
+    if(pendingChat){
+      var p=pendingChat; pendingChat=null;
+      if(p.photo){ sendPhoto(); }
+      else if(p.more){ showMore(); }
+      else if(p.text){ startChat(p.text, p.key); }
+    }
+  },1600);
+}
+
+/* ============== TOAST ============== */
+var toastTimer;
+function showToast(msg, type){
+  var t=document.getElementById('toast');
+  t.innerHTML=(type==='check'?'<div class="tcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div>':'')+'<div>'+msg+'</div>';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  if(type!=='listen' && type!=='check') toastTimer=setTimeout(hideToast,1500);
+}
+function hideToast(){ document.getElementById('toast').classList.remove('show'); }
+
+/* ============== UTIL ============== */
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* init */
+buildHome();
+</script>
+</body>
+</html>
