@@ -13,6 +13,7 @@
     --text-2:#8E8E93;
     --text-3:#AEAEB2;
     --blue:#007AFF;
+    --course:#FF7A00;
     --blue-soft:#E9F1FF;
     --line:rgba(60,60,67,0.10);
     --line-strong:rgba(60,60,67,0.18);
@@ -149,6 +150,37 @@
   .svc-item .si-ico{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);border:.5px solid var(--line);}
   .svc-item .si-ico svg{width:25px;height:25px;}
   .svc-item .si-l{font-size:11px;color:var(--text-2);font-weight:500;text-align:center;line-height:1.2;}
+
+  /* all-functions drawer */
+  .cat-h{font-size:12px;color:var(--text-2);font-weight:700;padding:16px 2px 6px;letter-spacing:.03em;}
+  .all-item{display:flex;align-items:center;gap:12px;padding:11px 2px;cursor:pointer;border-bottom:.5px solid var(--line);}
+  .all-item:last-child{border-bottom:none;}
+  .all-item.disabled{opacity:.62;}
+  .all-ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .all-ico svg{width:21px;height:21px;}
+  .all-txt{flex:1;min-width:0;}
+  .all-t{font-size:15px;font-weight:600;display:flex;align-items:center;gap:7px;}
+  .all-d{font-size:12px;color:var(--text-2);margin-top:2px;}
+  .all-item .chev{color:#C7C7CC;flex:0 0 auto;}
+  .all-item .chev svg{width:8px;height:15px;}
+  .soon{font-size:10px;font-weight:700;color:#B25E00;background:#FFF2DD;padding:1px 6px;border-radius:6px;}
+
+  /* course module */
+  .course-row{display:flex;gap:12px;align-items:flex-start;padding:11px;background:var(--surface);border:.5px solid var(--line);border-radius:14px;box-shadow:var(--shadow-sm);cursor:pointer;margin-top:10px;transition:transform .12s;}
+  .course-row:active{transform:scale(.985);}
+  .cr-txt{flex:1;min-width:0;}
+  .cr-t{font-size:14.5px;font-weight:600;line-height:1.35;}
+  .cr-m{font-size:12px;color:var(--text-2);margin-top:4px;}
+  .cr-tag{font-size:11px;color:#C2700A;background:#FFF3E0;display:inline-block;padding:2px 8px;border-radius:6px;margin-top:6px;}
+  .cprog{height:5px;background:var(--surface-2,#F2F2F7);border-radius:999px;overflow:hidden;margin-top:7px;}
+  .cprog>div{height:100%;background:#FF7A00;border-radius:999px;}
+  .cprog-t{font-size:10.5px;color:var(--text-3);margin-top:3px;display:inline-block;}
+  .ch-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:.5px solid var(--line);}
+  .ch-row:last-child{border-bottom:none;}
+  .ch-i{flex:0 0 auto;display:flex;}
+  .ch-n{flex:1;font-size:14px;}
+  .ch-n.playing{color:#FF7A00;font-weight:600;}
+  .ch-tag{font-size:10.5px;font-weight:700;color:#fff;background:#FF7A00;padding:2px 7px;border-radius:6px;}
 
   @media (prefers-reduced-motion: reduce){
     .aura,.ring,.ai-orb,.spark,.online .dot{animation:none!important;}
@@ -485,6 +517,18 @@
       <div id="featBody"></div>
     </div>
 
+    <!-- ============ COURSE DETAIL ============ -->
+    <div class="view" id="view-coursedetail" data-level="3">
+      <div class="nav">
+        <div class="back" onclick="goBack()">
+          <svg viewBox="0 0 12 21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 1.5L2 10.5l8.5 9"/></svg>
+          返回
+        </div>
+        <div class="title">课程详情</div>
+      </div>
+      <div id="courseDetailBody"></div>
+    </div>
+
     <!-- ============ CAMERA ============ -->
     <div class="view" id="view-camera" data-level="1">
       <div class="cam-top">
@@ -536,6 +580,15 @@
     <button class="pill-btn" onclick="activateVip()">立即开通 · ¥499/年</button>
   </div>
 
+  <!-- All AI functions -->
+  <div class="mask" id="allMask" onclick="closeAllSheet()"></div>
+  <div class="sheet" id="allSheet">
+    <div class="grip"></div>
+    <div style="font-size:21px;font-weight:800;padding:0 2px 2px;">全部 AI 功能</div>
+    <div style="font-size:13px;color:var(--text-2);padding:0 2px 2px;">共 15 项 · 持续上新</div>
+    <div id="allList"></div>
+  </div>
+
   <div class="toast" id="toast"></div>
 </div>
 
@@ -568,7 +621,7 @@ var SERVICES = {
     prompt:'帮我做一次面试点评', icon:'mic' },
   question:{ t:'题目推送', sub:'按薄弱项智能推题', color:'#0A84FF', bg:'#E5F1FF',
     prompt:'给我推几道薄弱项的题', icon:'list' },
-  course:{ t:'课程推送', sub:'针对性精讲课', color:'#FF9500', bg:'#FFF0DD',
+  course:{ t:'课程', sub:'直播 + 录播精讲课', color:'#FF9500', bg:'#FFF0DD',
     prompt:'推荐适合我的课程', icon:'play' },
   mock:{ t:'模考推送', sub:'全真模拟考试', color:'#30B0C7', bg:'#E2F5F8',
     prompt:'安排一次模考', icon:'timer' },
@@ -635,7 +688,7 @@ function buildHome(){
   });
   var more=document.createElement('div'); more.className='svc-item';
   more.innerHTML='<div class="si-ico" style="background:#F2F2F7">'+svgIcon('more','#8E8E93')+'</div><div class="si-l">更多</div>';
-  more.onclick=showMore;
+  more.onclick=openAllSheet;
   svc.appendChild(more);
   startPlaceholderCycle();
 }
@@ -675,6 +728,52 @@ function sendFromChat(){
   userSays(v);
 }
 function quickEntry(k){ startChat(SERVICES[k].prompt, k); }
+
+/* ===== COURSE catalog data (直播 + 录播) ===== */
+var COURSES=[
+  {id:'c1',title:'数量关系 · 行程问题秒杀技巧',teacher:'李梦',type:'录播',subject:'数量关系',dur:'42 分钟',lessons:6,progress:35,hot:true,match:'匹配你的薄弱项「数量关系」',
+   chapters:['相遇与追及模型','流水行船问题','火车过桥','环形跑道','比例法速解','历年真题精讲']},
+  {id:'c2',title:'资料分析 · 速算提速专项',teacher:'王浩',type:'录播',subject:'资料分析',dur:'38 分钟',lessons:5,progress:0,match:'提升你偏慢的资料分析速度',
+   chapters:['首数法','特征数字法','错位加减法','综合计算技巧','真题限时演练']},
+  {id:'c3',title:'申论大作文写作精讲',teacher:'张涛',type:'直播',subject:'申论',live:'今晚 19:30',dur:'90 分钟',booked:false,match:'结合你的申论批改报告',
+   chapters:['审题立意','分论点拟写','论证展开','开头与结尾','现场实战批改']},
+  {id:'c4',title:'判断推理 · 图形推理规律大全',teacher:'赵琳',type:'录播',subject:'判断推理',dur:'55 分钟',lessons:8,progress:100,match:'巩固你的强项',
+   chapters:['位置规律','样式规律','数量规律','属性规律','空间重构','真题精讲','易错点','冲刺训练']},
+  {id:'c5',title:'行测冲刺 · 全卷时间分配策略',teacher:'刘洋',type:'直播',subject:'行测综合',live:'明天 20:00',dur:'120 分钟',booked:false,match:'临考冲刺必备',
+   chapters:['模块作答顺序','蒙猜技巧','时间分配','考场心态调整']}
+];
+function courseById(id){ for(var i=0;i<COURSES.length;i++){ if(COURSES[i].id===id) return COURSES[i]; } return COURSES[0]; }
+
+/* full categorized function drawer (scales to 10-20+) */
+var ALL_CATS=[
+  {h:'诊断与评估', keys:['assessment','ability','report','weekly']},
+  {h:'学习与提升', keys:['plan','question','course','mock']},
+  {h:'批改与点评', keys:['correction','interview']},
+  {h:'督学与陪伴', keys:['supervise']}
+];
+var SOON=[
+  {t:'错题本', d:'自动归集高频错题', icon:'list'},
+  {t:'时政热点速递', d:'每日时政 + 申论素材', icon:'doc'},
+  {t:'申论范文库', d:'分主题精选范文', icon:'pen'},
+  {t:'常识速记卡', d:'碎片化背记', icon:'clipboard'}
+];
+function buildAll(){
+  var c=document.getElementById('allList'); c.innerHTML='';
+  var chev='<span class="chev"><svg viewBox="0 0 12 21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5l8.5 9-8.5 9"/></svg></span>';
+  ALL_CATS.forEach(function(cat){
+    var items=cat.keys.map(function(k){var s=SERVICES[k];
+      return '<div class="all-item" onclick="pickAll(\''+k+'\')"><div class="all-ico" style="background:'+s.bg+'">'+svgIcon(s.icon,s.color)+'</div><div class="all-txt"><div class="all-t">'+s.t+'</div><div class="all-d">'+s.sub+'</div></div>'+chev+'</div>';
+    }).join('');
+    c.innerHTML+='<div class="cat-h">'+cat.h+'</div>'+items;
+  });
+  var soon=SOON.map(function(s){
+    return '<div class="all-item disabled" onclick="showToast(\'「'+s.t+'」即将上线\')"><div class="all-ico" style="background:#F2F2F7">'+svgIcon(s.icon,'#8E8E93')+'</div><div class="all-txt"><div class="all-t">'+s.t+' <span class="soon">即将上线</span></div><div class="all-d">'+s.d+'</div></div></div>';
+  }).join('');
+  c.innerHTML+='<div class="cat-h">即将上线</div>'+soon;
+}
+function pickAll(k){ closeAllSheet(); setTimeout(function(){ if(k==='course'){ openCourseCenter(); } else { quickEntry(k); } }, 300); }
+function openAllSheet(){ buildAll(); document.getElementById('allMask').classList.add('show'); document.getElementById('allSheet').classList.add('show'); }
+function closeAllSheet(){ document.getElementById('allMask').classList.remove('show'); document.getElementById('allSheet').classList.remove('show'); }
 function quickAsk(t){ startChat(t); }
 function voiceInput(){
   showToast('🎙️ 聆听中…','listen');
@@ -961,7 +1060,8 @@ function appendCard(key){
   var preview = cardPreview(key);
   var s2=document.getElementById('chatScroll');
   var row=document.createElement('div'); row.className='row ai card-row';
-  var card=document.createElement('div'); card.className='fcard'; card.onclick=function(){ openFeature(key); };
+  var card=document.createElement('div'); card.className='fcard';
+  card.onclick=(key==='course') ? function(){ openCourseDetail('c1'); } : function(){ openFeature(key); };
   card.innerHTML='<div class="fc-head"><div class="fc-tag" style="background:'+s.bg+'">'+svgIcon(s.icon,s.color)+'</div>'
     +'<div><div class="ft">'+s.t+'</div><div class="fs">'+s.sub+'</div></div></div>'
     +'<div class="fc-body">'+preview+'</div>'
@@ -999,7 +1099,13 @@ function cardPreview(key){
     return '<div class="stat-grid" style="margin:0;"><div class="stat"><div class="n">9.5h</div><div class="l">学习</div></div><div class="stat"><div class="n">320</div><div class="l">做题</div></div><div class="stat"><div class="n">71%</div><div class="l">正确率</div></div></div>';
   }
   if(key==='interview') return '<div style="font-size:13px;color:var(--text-2);">🎤 结构化面试 · AI 多维点评</div>';
-  if(key==='course') return '<div style="font-size:13px;color:var(--text-2);">🎬 数量关系秒杀技巧（2 节）</div>';
+  if(key==='course'){ var c=COURSES[0];
+    return '<div style="display:flex;gap:11px;align-items:center;">'
+      +'<div style="width:62px;height:46px;border-radius:9px;flex:0 0 auto;background:linear-gradient(135deg,#FF9F45,#FF7A00);display:flex;align-items:center;justify-content:center;">'
+        +'<svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div>'
+      +'<div style="min-width:0;"><div style="font-size:13.5px;font-weight:600;line-height:1.35;">'+c.title+'</div>'
+      +'<div style="font-size:11.5px;color:var(--text-3);margin-top:3px;">'+c.teacher+' · '+c.dur+' · 录播</div></div></div>';
+  }
   if(key==='mock') return '<div style="font-size:13px;color:var(--text-2);">⏱️ 行测全真模考 · 120 分钟</div>';
   if(key==='supervise') return '<div style="font-size:13px;color:var(--text-2);">🔔 每天 20:00 提醒你完成任务</div>';
   return '';
@@ -1071,6 +1177,7 @@ function bigRing(val,total,color){
 
 /* ============== FEATURE PAGES ============== */
 function openFeature(key){
+  if(key==='course'){ openCourseCenter(); return; }
   document.getElementById('featTitle').textContent=SERVICES[key].t;
   document.getElementById('featBody').innerHTML=featContent(key);
   pushView('feature');
@@ -1158,6 +1265,80 @@ function correctionPage(){
     +'<button class="pill-btn" onclick="showToast(\'📷 请拍照或粘贴新的作文\')">批改新的作文</button>'
     +'<button class="pill-btn ghost" onclick="goBack()">返回对话</button></div>';
 }
+
+/* ===== COURSE module: 课程中心(浏览) + 课程详情(播放) ===== */
+function courseCover(c, big){
+  var icon = c.type==='直播'
+    ? '<svg viewBox="0 0 24 24" width="'+(big?30:20)+'" height="'+(big?30:20)+'" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z" fill="#fff" stroke="none"/></svg>'
+    : '<svg viewBox="0 0 24 24" width="'+(big?32:20)+'" height="'+(big?32:20)+'" fill="#fff"><path d="M8 5v14l11-7z"/></svg>';
+  var grad = c.type==='直播' ? 'linear-gradient(135deg,#FF5E7A,#E5345A)' : 'linear-gradient(135deg,#FF9F45,#FF7A00)';
+  return '<div style="position:relative;background:'+grad+';border-radius:'+(big?'16px':'10px')+';display:flex;align-items:center;justify-content:center;'+(big?'height:180px;':'width:96px;height:66px;flex:0 0 auto;')+'">'
+    + (c.type==='直播' ? '<span style="position:absolute;top:7px;left:7px;background:rgba(0,0,0,.35);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;">● 直播</span>' : '')
+    + icon + '</div>';
+}
+function courseRow(c){
+  var meta = c.type==='直播' ? ('🔴 '+c.live+' 开播 · '+c.dur) : (c.teacher+' · '+c.dur+' · '+c.lessons+'节');
+  var prog = (c.type==='录播' && c.progress>0) ? '<div class="cprog"><div style="width:'+c.progress+'%"></div></div><span class="cprog-t">'+(c.progress===100?'已学完':'已学 '+c.progress+'%')+'</span>' : '';
+  return '<div class="course-row" onclick="openCourseDetail(\''+c.id+'\')">'+courseCover(c,false)
+    +'<div class="cr-txt"><div class="cr-t">'+c.title+'</div><div class="cr-m">'+meta+'</div>'
+    +(c.match?'<div class="cr-tag">'+(c.type==='直播'?'🎯 ':'🎯 ')+c.match+'</div>':'')+prog+'</div></div>';
+}
+function openCourseCenter(){
+  var live=COURSES.filter(function(c){return c.type==='直播';});
+  var rec=COURSES.filter(function(c){return c.type==='录播';});
+  var topPick=COURSES[0];
+  var html='<div class="fp"><h2>课程中心</h2><p class="lead">直播 + 录播 · 按你的能力图谱智能匹配</p>'
+    +'<div class="panel" style="padding:0;overflow:hidden;cursor:pointer;" onclick="openCourseDetail(\''+topPick.id+'\')">'
+      +courseCover(topPick,true)
+      +'<div style="padding:14px 16px;"><div style="font-size:11px;color:var(--course);font-weight:700;">AI 为你优选</div>'
+      +'<div style="font-size:16px;font-weight:700;margin-top:4px;">'+topPick.title+'</div>'
+      +'<div style="font-size:12.5px;color:var(--text-2);margin-top:4px;">'+topPick.teacher+' · '+topPick.dur+' · '+topPick.match+'</div></div></div>'
+    +'<div class="panel-h" style="padding:18px 2px 4px;">📡 直播预告</div>'+live.map(courseRow).join('')
+    +'<div class="panel-h" style="padding:18px 2px 4px;">🎬 精选录播</div>'+rec.map(courseRow).join('')
+    +'</div>';
+  document.getElementById('featTitle').textContent='课程中心';
+  document.getElementById('featBody').innerHTML=html;
+  pushView('feature');
+  document.getElementById('view-feature').scrollTop=0;
+}
+function openCourseDetail(id){
+  var c=courseById(id);
+  var live = c.type==='直播';
+  var player='<div style="position:relative;">'+ '<div style="height:200px;background:'+(live?'linear-gradient(135deg,#FF5E7A,#E5345A)':'linear-gradient(135deg,#FF9F45,#FF7A00)')+';display:flex;align-items:center;justify-content:center;">'
+    +'<div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">'
+    +'<svg viewBox="0 0 24 24" width="28" height="28" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div>'
+    + (live?'<span style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,.4);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;">● 直播 · '+c.live+'</span>':'<span style="position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.45);color:#fff;font-size:11px;padding:2px 7px;border-radius:6px;">'+c.dur+'</span>')
+    +'</div></div>';
+  var chapters=c.chapters.map(function(ch,i){
+    var done = c.type==='录播' && c.progress>0 && (i < Math.round(c.chapters.length*c.progress/100));
+    var playing = c.type==='录播' && i === Math.round(c.chapters.length*c.progress/100) && c.progress<100 && c.progress>0;
+    var ic = done ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#34C759" stroke-width="2.4"><path d="M5 12l5 5L20 7"/></svg>'
+           : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="'+(playing?'var(--course)':'#C7C7CC')+'" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M10 9l5 3-5 3z" fill="'+(playing?'var(--course)':'#C7C7CC')+'" stroke="none"/></svg>';
+    return '<div class="ch-row"><span class="ch-i">'+ic+'</span><span class="ch-n'+(playing?' playing':'')+'">'+(i+1)+'. '+ch+'</span>'+(playing?'<span class="ch-tag">学习中</span>':'')+'</div>';
+  }).join('');
+  var cta = live
+    ? (c.booked
+        ? '<button class="pill-btn" onclick="enterLive()">进入直播间</button><button class="pill-btn ghost" onclick="goBack()">返回</button>'
+        : '<button class="pill-btn" onclick="bookLive(\''+c.id+'\')">预约直播（'+c.live+'）</button><button class="pill-btn ghost" onclick="addToPlan()">加入今日计划</button>')
+    : '<button class="pill-btn" onclick="enterLive()">'+(c.progress>0&&c.progress<100?'继续学习':(c.progress===100?'重新学习':'开始学习'))+'</button><button class="pill-btn ghost" onclick="addToPlan()">加入今日计划</button>';
+  var related=COURSES.filter(function(x){return x.id!==c.id;}).slice(0,2);
+  var html='<div>'+player
+    +'<div class="fp" style="padding-top:14px;">'
+    +'<h2 style="font-size:20px;">'+c.title+'</h2>'
+    +'<p class="lead">'+c.teacher+' · '+c.type+' · '+c.dur+(c.type==='录播'?' · '+c.lessons+'节':'')+'</p>'
+    +'<div class="tip" style="margin-top:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 4-9 4-9-4 9-4z"/><path d="M6 9.5V14c0 1.7 2.7 3 6 3s6-1.3 6-3V9.5" stroke-linecap="round"/></svg><div><b>AI 老师推荐：</b>'+c.match+'。学完建议配套练习巩固。</div></div>'
+    +'<div class="panel"><div class="panel-h">课件目录 · '+c.chapters.length+' 节</div>'+chapters+'</div>'
+    +'<div class="panel-h" style="padding:16px 2px 6px;">相关课程</div>'+related.map(courseRow).join('')
+    + cta
+    +'</div></div>';
+  document.getElementById('courseDetailBody').innerHTML=html;
+  pushView('coursedetail');
+  document.getElementById('view-coursedetail').scrollTop=0;
+}
+function bookLive(id){ var c=courseById(id); c.booked=true; showToast('已预约，开播前提醒你'); setTimeout(function(){ openCourseDetail(id); }, 900); }
+function enterLive(){ showToast('▶️ 正在进入课堂…'); }
+function addToPlan(){ showToast('已加入今日学习计划'); }
+
 function assessmentPage(){
   return '<div class="fp"><h2>能力测评</h2><p class="lead">10 分钟 · 6 大模块 · 自适应难度</p>'
     +'<div class="panel"><div style="font-size:14px;line-height:1.7;color:var(--text);">本测评将快速诊断你在<b>常识、言语、数量、判断、资料、申论</b>六大模块的当前水平，并据此生成专属能力图谱与学习计划。</div></div>'
