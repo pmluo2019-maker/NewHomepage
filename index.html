@@ -550,6 +550,8 @@ var ABILITY = [
   {name:'申论',     short:'申论', score:65}
 ];
 var GOAL = '省考 · 行政执法类';
+/* shared learner profile — written by 测评, reused by 学习计划 (复用已知，只问缺口) */
+var profile = {assessed:false, goal:GOAL, examTime:'', weak:'数量关系', dailyTime:'', daysPerWeek:'', focus:''};
 
 var SERVICES = {
   assessment:{ t:'测评', sub:'考试目标 + 能力测评', color:'#5E5CE6', bg:'#ECECFE',
@@ -740,6 +742,8 @@ function userSays(text, directKey){
   var key = directKey || detectIntent(text);
   aiThinking(function(){
     if(key==='vague'){ askClarify(); }
+    else if(key==='assessment'){ startAssessment(); }
+    else if(key==='plan'){ startPlan(); }
     else { respondWith(key); }
   }, 950);
 }
@@ -772,6 +776,183 @@ function respondWith(key){
   };
   aiBubble(lines[key]||'好的，已为你调用相应功能。');
   setTimeout(function(){ appendCard(key); }, 200);
+}
+
+/* ============== ASSESSMENT (测评) CONVERSATION FLOW ============== */
+var asmt=null;
+/* post an AI bubble with tappable option chips; onPick(option) fires after a short think */
+function aiChips(html, options, onPick){
+  var row=aiBubble(html);
+  var chips=document.createElement('div'); chips.className='chips';
+  options.forEach(function(opt){
+    var b=document.createElement('div'); b.className='chip'; b.textContent=opt;
+    b.onclick=function(){
+      chips.querySelectorAll('.chip').forEach(function(c){c.style.pointerEvents='none';c.style.opacity='.45';});
+      b.style.opacity='1';
+      userBubble(opt);
+      aiThinking(function(){ onPick(opt); }, 650);
+    };
+    chips.appendChild(b);
+  });
+  row.querySelector('.bubble').appendChild(chips);
+  scrollChat();
+}
+
+var ASMT_QS={
+  easy:{module:'言语理解',text:'「行百里者半九十」最适合用于强调？',opts:[['做事要趁早',0],['越接近成功越要坚持',1],['过程比结果重要',0],['失败乃成功之母',0]]},
+  mid:{module:'判断推理',text:'「医生∶医院」与下列哪项逻辑关系最接近？',opts:[['演员∶剧本',0],['教师∶学校',1],['乘客∶车票',0],['农民∶丰收',0]]},
+  hard:{module:'数量关系',text:'甲乙相距 240km，甲 60km/h、乙 80km/h 相向而行，几小时相遇？',opts:[['1.5 小时',0],['约 1.71 小时',1],['2 小时',0],['2.4 小时',0]]}
+};
+function asmtSeq(){
+  if(asmt.level.indexOf('小白')>=0) return ['easy','mid','hard'];
+  if(asmt.level.indexOf('二战')>=0||asmt.level.indexOf('冲刺')>=0) return ['mid','hard','hard'];
+  return ['mid','hard','mid'];
+}
+function correctLabel(q){ for(var i=0;i<q.opts.length;i++){ if(q.opts[i][1]===1) return q.opts[i][0]; } return ''; }
+
+function startAssessment(){
+  asmt={goal:'',category:'',examTime:'',level:'',weak:'',qIndex:0,correct:0};
+  aiBubble('好的，我们先做个 <b>10 分钟能力测评</b> 📊<br>我会先了解你的目标，再出几道题摸底，最后生成你的专属能力图谱。');
+  setTimeout(asmtGoal, 600);
+}
+function asmtGoal(){
+  aiChips('<b>第一步 · 目标</b><br>先确定你的目标考试 👇',
+    ['国家公务员','省·市公务员','事业单位','选调生'],
+    function(o){ asmt.goal=o; asmtCategory(); });
+}
+function asmtCategory(){
+  aiChips('了解～报考岗位更偏向哪类？',
+    ['行政执法类','综合管理类','还不确定'],
+    function(o){ asmt.category=(o==='还不确定'?'待定':o); asmtTime(); });
+}
+function asmtTime(){
+  aiChips('计划什么时候上岸？这会影响计划节奏 ⏰',
+    ['3 个月内','半年内','一年内','还没定'],
+    function(o){ asmt.examTime=o; asmtLevel(); });
+}
+function asmtLevel(){
+  aiChips('<b>第二步 · 自评</b><br>再了解下你的基础，目前处于哪个阶段？',
+    ['公考小白，刚起步','有一定基础','二战 · 冲刺'],
+    function(o){ asmt.level=o; asmtWeak(); });
+}
+function asmtWeak(){
+  aiChips('自我感觉哪块最没底？凭直觉选即可（用来设定起始难度）',
+    ['数量关系','资料分析','判断推理','言语 · 常识','申论','都还行'],
+    function(o){ asmt.weak=o; asmtIntroTest(); });
+}
+function asmtIntroTest(){
+  var hint = asmt.level.indexOf('小白')>=0 ? '我会从基础题开始'
+           : (asmt.level.indexOf('二战')>=0||asmt.level.indexOf('冲刺')>=0 ? '我会直接上中高难度' : '我会从中等难度开始');
+  aiBubble('信息收集完成 ✅<br><b>第三步 · 摸底测评</b>：'+hint+'，并根据你的作答动态调整难度。共 3 道题，开始 👇');
+  setTimeout(function(){ asmt.qIndex=0; asmtAsk(); }, 700);
+}
+function asmtAsk(){
+  var seq=asmtSeq();
+  if(asmt.qIndex>=seq.length){ asmtFinish(); return; }
+  var q=ASMT_QS[seq[asmt.qIndex]];
+  var row=aiBubble('<b>第 '+(asmt.qIndex+1)+'/3 题</b> · '+q.module+'<br>'+q.text);
+  var chips=document.createElement('div'); chips.className='chips';
+  q.opts.forEach(function(opt){
+    var b=document.createElement('div'); b.className='chip'; b.textContent=opt[0];
+    b.onclick=function(){
+      chips.querySelectorAll('.chip').forEach(function(c){c.style.pointerEvents='none';c.style.opacity='.45';});
+      b.style.opacity='1';
+      userBubble(opt[0]);
+      var ok=opt[1]===1; if(ok) asmt.correct++;
+      aiThinking(function(){
+        aiBubble(ok?'✅ 正确！':'❌ 不对，正确答案是「'+correctLabel(q)+'」');
+        asmt.qIndex++;
+        setTimeout(asmtAsk, 750);
+      }, 600);
+    };
+    chips.appendChild(b);
+  });
+  row.querySelector('.bubble').appendChild(chips);
+  scrollChat();
+}
+function asmtFinish(){
+  profile.assessed=true;
+  profile.goal=asmt.goal+(asmt.category && asmt.category!=='待定' ? ' · '+asmt.category : '');
+  profile.examTime=asmt.examTime;
+  profile.weak='数量关系';
+  aiBubble('测评完成 🎉 你答对 <b>'+asmt.correct+'/3</b>。<br>结合你的目标「'+asmt.goal+' · '+asmt.category+'」和作答，已生成你的<b>专属能力图谱</b>：');
+  setTimeout(function(){ appendCard('ability'); setTimeout(asmtCalibration, 550); }, 300);
+}
+function asmtCalibration(){
+  var msg;
+  if(asmt.weak.indexOf('数量')>=0){
+    msg='🎯 <b>认知校准：</b>和你的预判一致——<b>数量关系（52 分）</b>确实是当前最大短板，建议优先突破。';
+  } else if(asmt.weak.indexOf('都还行')>=0){
+    msg='🎯 <b>认知校准：</b>你觉得各模块都还行，但实测显示 <b>数量关系（52 分）</b> 明显偏弱，可能被你低估了，建议重点关注。';
+  } else {
+    msg='🎯 <b>认知校准：</b>你最担心「'+asmt.weak+'」，但实测它并非最弱项；真正的短板是 <b>数量关系（52 分）</b>，建议优先突破。';
+  }
+  aiBubble(msg);
+  setTimeout(function(){
+    var row=aiBubble('要我直接根据这份图谱生成学习计划吗？');
+    var chips=document.createElement('div'); chips.className='chips';
+    var b1=document.createElement('div'); b1.className='chip'; b1.textContent='好，生成学习计划';
+    b1.onclick=function(){ chips.querySelectorAll('.chip').forEach(function(c){c.style.pointerEvents='none';c.style.opacity='.45';}); userSays('帮我生成本周学习计划','plan'); };
+    var b2=document.createElement('div'); b2.className='chip'; b2.textContent='先看看能力图谱';
+    b2.onclick=function(){ openFeature('ability'); };
+    chips.appendChild(b1); chips.appendChild(b2);
+    row.querySelector('.bubble').appendChild(chips); scrollChat();
+  }, 550);
+}
+
+/* ============== STUDY PLAN (学习计划) CONVERSATION FLOW ============== */
+function startPlan(){
+  if(profile.assessed){
+    aiBubble('基于你刚完成的测评——目标「'+profile.goal+'」、最大薄弱项「<b>'+profile.weak+'</b>」、距考试约 86 天，我来帮你排计划 📅<br>还差一个关键信息 👇');
+    setTimeout(planTime, 650);
+  } else {
+    aiChips('生成计划前想更贴合你的情况，要不要先做个 2 分钟快速测评？这样薄弱项和难度都更准。',
+      ['先做快速测评','直接生成计划'],
+      function(o){
+        if(o.indexOf('测评')>=0){ startAssessment(); }
+        else {
+          aiBubble('好，先按默认目标「'+profile.goal+'」来，薄弱项暂按常见的「<b>数量关系</b>」处理（测评后可随时校准）。');
+          setTimeout(planTime, 750);
+        }
+      });
+  }
+}
+function planTime(){
+  aiChips('<b>第一步 · 可投入时间</b><br>你每天大概能投入多久学习？',
+    ['1 小时内','1–2 小时','2–3 小时','3 小时以上'],
+    function(o){ profile.dailyTime=o; planDays(); });
+}
+function planDays(){
+  aiChips('每周大概能学几天？',
+    ['每天都学','5–6 天','3–4 天','不固定'],
+    function(o){ profile.daysPerWeek=o; planFocus(); });
+}
+function planFocus(){
+  aiChips('<b>第二步 · 节奏偏好</b><br>你更想要哪种节奏？',
+    ['重点突破薄弱项','全面均衡提升','真题冲刺刷题'],
+    function(o){ profile.focus=o; planGenerate(); });
+}
+function planGenerate(){
+  var phase = profile.examTime.indexOf('3 个月')>=0 ? '冲刺型（基础 1 周 → 强化 5 周 → 真题冲刺）'
+            : (profile.examTime.indexOf('一年')>=0 ? '长线型（基础夯实 → 系统强化 → 真题冲刺）'
+            : '标准型（基础 2 周 → 强化 6 周 → 冲刺 4 周）');
+  aiBubble('信息齐了 ✅ 综合你的目标、<b>'+profile.dailyTime+'/天 · '+profile.daysPerWeek+'</b>、偏好「<b>'+profile.focus+'</b>」，已生成 <b>'+phase+'</b> 学习计划：');
+  setTimeout(function(){ appendCard('plan'); setTimeout(planNext, 550); }, 300);
+}
+function planNext(){
+  var row=aiBubble('计划已就绪，接下来想做什么？');
+  var chips=document.createElement('div'); chips.className='chips';
+  [['开始今天第一项','q'],['设置督学提醒','s'],['查看完整计划','p']].forEach(function(c){
+    var b=document.createElement('div'); b.className='chip'; b.textContent=c[0];
+    b.onclick=function(){
+      chips.querySelectorAll('.chip').forEach(function(x){x.style.pointerEvents='none';x.style.opacity='.45';});
+      if(c[1]==='q'){ openFeature('question'); }
+      else if(c[1]==='s'){ userSays('帮我设置每日督学提醒','supervise'); }
+      else { openFeature('plan'); }
+    };
+    chips.appendChild(b);
+  });
+  row.querySelector('.bubble').appendChild(chips); scrollChat();
 }
 
 /* ---- function card as a standalone AI message ---- */
@@ -918,17 +1099,38 @@ function abilityPage(){
     +'<button class="pill-btn ghost" onclick="goBack()">返回对话</button></div>';
 }
 function planPage(){
-  var tasks=[
-    {t:'数量关系 · 行程问题 15 题',tag:'薄弱突破',sub:'约 30 分钟',done:false},
-    {t:'资料分析 1 套（25 题）',tag:'限时训练',sub:'约 25 分钟',done:false},
-    {t:'申论范文精读 1 篇',tag:'申论积累',sub:'约 20 分钟',done:false},
-    {t:'判断推理错题回顾',tag:'巩固',sub:'约 15 分钟',done:true}
-  ];
+  var goalTxt = profile.goal || GOAL;
+  var focus = profile.focus || '重点突破薄弱项';
+  var basis = (profile.dailyTime ? ('每日 '+profile.dailyTime+(profile.daysPerWeek?' · '+profile.daysPerWeek:'')) : '每日 1–2 小时')+' · 重点：'+(profile.weak||'数量关系');
+  var tasks;
+  if(focus.indexOf('真题')>=0){
+    tasks=[
+      {t:'行测真题套卷 1 套（限时）',tag:'真题冲刺',sub:'约 75 分钟',done:false},
+      {t:'数量关系 · 行程问题 10 题',tag:'薄弱突破',sub:'约 20 分钟',done:false},
+      {t:'真题错题复盘',tag:'复盘',sub:'约 20 分钟',done:false},
+      {t:'申论范文精读 1 篇',tag:'申论积累',sub:'约 20 分钟',done:true}
+    ];
+  } else if(focus.indexOf('均衡')>=0){
+    tasks=[
+      {t:'数量关系 · 行程问题 10 题',tag:'薄弱突破',sub:'约 20 分钟',done:false},
+      {t:'言语理解 15 题',tag:'保持手感',sub:'约 15 分钟',done:false},
+      {t:'资料分析 1 套（25 题）',tag:'限时训练',sub:'约 25 分钟',done:false},
+      {t:'判断推理错题回顾',tag:'巩固',sub:'约 15 分钟',done:true}
+    ];
+  } else {
+    tasks=[
+      {t:'数量关系 · 行程问题 15 题',tag:'薄弱突破',sub:'约 30 分钟',done:false},
+      {t:'数量关系 · 工程问题 10 题',tag:'薄弱突破',sub:'约 20 分钟',done:false},
+      {t:'资料分析 1 套（25 题）',tag:'限时训练',sub:'约 25 分钟',done:false},
+      {t:'判断推理错题回顾',tag:'巩固',sub:'约 15 分钟',done:true}
+    ];
+  }
   var list=tasks.map(function(t,i){
     return '<div class="task '+(t.done?'done':'')+'" onclick="toggleTask(this)"><div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></div>'
       +'<div class="tx"><div class="tt">'+t.t+'</div><div class="ttag">'+t.sub+'</div></div><span class="subtag">'+t.tag+'</span></div>';
   }).join('');
-  return '<div class="fp"><h2>本周学习计划</h2><p class="lead">'+GOAL+' · 距省考还有 86 天</p>'
+  return '<div class="fp"><h2>本周学习计划</h2><p class="lead">'+goalTxt+' · 距省考还有 86 天</p>'
+    +'<div class="tip" style="margin-top:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2zM9 21h6" stroke-linecap="round"/></svg><div><b>计划依据：</b>'+basis+'，节奏「'+focus+'」。</div></div>'
     +'<div class="panel"><div style="display:flex;justify-content:space-between;align-items:baseline;"><span style="font-weight:700;font-size:16px;">本周进度</span><span style="font-weight:800;color:var(--blue);">62%</span></div><div class="progress-line"><div style="width:62%"></div></div><div style="font-size:12px;color:var(--text-3);margin-top:10px;">已完成 13 / 21 个任务，超过 78% 的同目标考生 🎉</div></div>'
     +'<div class="panel"><div class="panel-h">今日任务 · 周一</div><div class="mod-list">'+list+'</div></div>'
     +'<button class="pill-btn" onclick="openFeature(\'question\')">开始第一项任务</button>'
